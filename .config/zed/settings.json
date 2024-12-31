@@ -1,0 +1,287 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run the `open default settings` command
+// from the command palette or from `Zed` application menu.
+{
+
+  // Editor UI
+
+  "file_icons": false,
+  "vim_mode": false,
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  
+  "active_pane_modifiers": {
+    "magnification": 1.75,
+    "border_size": 1,
+    "inactive_opacity": 0.5
+  },
+  
+  "git": {
+    "git_gutter": "tracked_files",
+    "inline_blame": {
+      "enabled": false
+    }
+  },
+  
+  "gutter": {
+    "code_actions": true,
+    "runnables": true,
+    "folds": false
+  },
+  
+  "confirm_quit": true,
+  "restore_on_startup": "last_session",
+  "base_keymap": "Atom",
+  "scroll_beyond_last_line": "off",
+  "buffer_line_height": "comfortable",
+
+  // Typography
+
+  "ui_font_size": 14,
+  "ui_font_weight": 400, // 350 = Fira Code Retina
+  "ui_font_family": "SF Pro Text",
+
+  "buffer_font_size": 13,
+  "buffer_font_weight": 400, // 350 = Fira Code Retina
+  "buffer_font_family": "SF Mono",
+
+  "theme": {
+    "mode": "dark",
+    "light": "one-dark-nicholaswmin",
+    "dark": "one-dark-nicholaswmin"
+  },
+
+  // Panels
+
+  "project_panel": {
+    "default_width": 200,
+    "button": true,
+    "file_icons": false,
+    "folder_icons": true,
+    "indent_size": 10,
+    "auto_reveal_entries": true,
+    "auto_fold_dirs": false
+  },
+
+  "collaboration_panel": {
+    "button": false
+  },
+
+  "chat_panel": {
+    "button": false
+  },
+
+  "notification_panel": {
+    "dock": "left",
+    "button": false
+  },
+
+  "show_call_status_icon": false,
+
+  "preview_tabs": {
+    "enabled": true
+  },
+
+  "tab_bar": {
+    "show": true,
+    "show_nav_history_buttons": false
+  },
+
+  "tabs": {
+    "git_status": false,
+    "close_position": "right",
+    "file_icons": false
+  },
+  
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false,
+    "selections_menu": false
+  },
+
+  "scrollbar": {
+    "show": "auto"
+  },
+  
+  // Terminal
+
+  "terminal": {
+    "alternate_scroll": "off",
+    "blinking": "on",
+    "cursor_shape": "bar",
+    "copy_on_select": false,
+    "dock": "bottom",
+    "default_height": 250,
+    "default_width:": 500,
+    "detect_venv": {
+      "on": {
+        "directories": [".env", "env", ".venv", "venv"],
+        "activate_script": "default"
+      }
+    },
+    "env": {},
+    "font_family": "PT Mono",
+    "line_height": "comfortable",
+    "option_as_meta": false,
+    "button": true,
+    "shell": {
+      "program": "bash"
+    },
+    "toolbar": {
+      "breadcrumbs": false
+    },
+    "working_directory": "current_project_directory"
+  },
+  
+  // Tasks
+
+  "tasks": {
+    "variables": {},
+    "working_directory": "current_project_directory",
+    "enabled": true,
+    "show": true,
+    "use_new_terminal": false,
+    // Whether to show the task line in the output of the spawned task, defaults to `true`.
+    "show_summary": true,
+    // Whether to show the command line in the output of the spawned task, defaults to `true`.
+    "show_output": true,
+    "button": true,
+    "program": "bash"
+  },
+  
+  // Assistant
+
+  "assistant": {
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-4o"
+    },
+    "version": "2"
+  },
+
+  // Search
+
+  "seed_search_query_from_cursor": "selection",
+
+
+  // Formatting
+
+  "unnecessary_code_fade": 0.5,
+  "format_on_save": "off",
+  "soft_wrap": "none",
+  "remove_trailing_whitespace_on_save": false,
+  "use_on_type_format": false,
+  "hard_tabs": false,
+  
+  // Indentation helpers
+
+  "indent_guides": {
+    "enabled": true
+  },
+  "show_wrap_guides": true,
+  "wrap_guides": [80],
+  "use_autoclose": true,
+  "use_auto_surround": true,
+  "auto_indent_on_paste": true,
+  "autoscroll_on_clicks": false,
+
+  // Code Completions
+  
+  "enable_language_server": true,
+  "show_completions_on_input": true,
+  "show_inline_completions": true,
+  "show_signature_help_after_edits": false,
+  "show_completion_documentation": false,
+  "hover_popover_enabled": false,
+  "features": {
+    "inline_completion_provider": "copilot"
+  },
+  
+  // Inlay Hints
+  
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": false,
+    "show_parameter_hints": false,
+    "show_other_hints": false,
+    "show_background": false,
+    "edit_debounce_ms": 700,
+    "scroll_debounce_ms": 50
+  },
+
+  "lsp_highlight_debounce": 1000,
+  
+  // Languages
+
+  "languages": {
+    "Shell Script": {
+      "tab_size": 2
+    },
+    "JavaScript": {
+      "tab_size": 2,
+      "use_autoclose": true,
+      "format_on_save": "off",
+      "language_servers": ["...", "vtsls", "!typescript-language-server"],
+      "formatter": [{ "language_server": { "name": "vtsls" } }]
+    },
+    "Markdown": { "format_on_save": "off" },
+    "CSS": { "format_on_save": "off", "tab_size": 2 },
+    "HTML": { "format_on_save": "off", "tab_size": 2 }
+  },
+  
+  // Language Servers
+
+  "lsp": {
+    "vtsls": {
+      "settings": {
+        "typescript": {
+          "disableAutomaticTypeAcquisition": false
+        },
+        "javascript": {
+          "preferences": {
+            "quoteStyle": "single"
+          },
+          "referencesCodeLens": {
+            "enabled": false
+          },
+          "suggest": {
+            "enabled": false
+          },
+          "inlayHints": {
+            "enabled": false,
+            "variableTypes": {
+              "enabled": false
+            }
+          },
+          "format": {
+            "tabSize": 2,
+            "indentSize": 2,
+            "semicolons": "remove",
+            "convertTabsToSpaces": true,
+            "trimTrailingWhitespace": true,
+            "placeOpenBraceOnNewLineForFunctions": false,
+            "placeOpenBraceOnNewLineForControlBlocks": false,
+            "insertSpaceAfterKeywordsInControlFlowStatements": true,
+            "insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
+            "insertSpaceBeforeFunctionParenthesis": false,
+            "insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": false,
+            "insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
+            "insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
+            "insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
+            "insertSpaceAfterCommaDelimiter": true,
+            "insertSpaceAfterConstructor": false,
+            "insertSpaceAfterSemicolonInForStatements": true,
+            "insertSpaceAfterTypeAssertion": false
+          }
+        }
+      }
+    }
+  }
+}

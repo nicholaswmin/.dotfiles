@@ -1,0 +1,68 @@
+# This is Git's per-user configuration file.
+[user]
+# Please adapt and uncomment the following lines:
+	name = n.kyriakides
+	email = nik.kyriakides@gmail.com
+	signingkey = 8F6AAC624E5A714EFDBD482858E25260E3E4158C
+[safe]
+	directory = *
+[alias]
+    feat     = "! nuke feat"
+   	save     = "! nuke save"
+    goto     = "! nuke goto"
+    drop     = "! nuke drop"
+
+   	tidy     = "! nuke tidy"
+    approve  = "! nuke approve"
+
+    sync     = "! nuke sync"
+   	list     = "! nuke list"
+	halp     = "! nuke help_me"
+
+    # rename branch
+    rename = branch -m
+
+    # rewrite repository history so it looks cleaner
+    # needs >= 10 commitsm you can pick which one to keep
+	revise = "!git rebase -i HEAD~10"
+	nuke-pr = "! gh pr list; if [ $? = 1 ]; then git nuke-branch && exit 0; fi; \
+	gh pr close -d -c \"closed by user cmd: git pr--nuke\" $(git branch --show-current) \
+	&& echo '⚠ 033[94mrestorable from > PRs > this pr > restore branch033[0m';" \
+    # undo last "git ac" or "git add + commit". 
+    # just unstages, doesn't delete anything
+	undo = "!git reset --soft HEAD~1 && git reset"
+
+	# view last commit 
+    last = log -1 HEAD
+[core]
+    # ignore chmod changes
+	fileMode = false
+	editor = zed --wait
+	# hooks
+	hooksPath = ~/.config/git/hooks
+	# global .gitignore
+	excludesfile = ~/.config/git/ignore
+[sequence]
+    # download from: https://github.com/sjurba/rebase-editor
+	editor = rebase-editor
+[push]
+    default = simple
+    autoSetupRemote = true
+[pull]
+	ff = only
+	rebase = true
+	merge = false
+[commit]
+	gpgsign = false
+[gpg]
+	program = /usr/local/bin/gpg
+[color]
+	ui = auto
+	branch = auto
+	diff = auto
+	interactive = auto
+	status = auto
+[merge]
+	ff = false
+[init]
+	defaultBranch = main

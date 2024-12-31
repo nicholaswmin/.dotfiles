@@ -1,0 +1,673 @@
+{  
+  "promise": {
+    "description": "define a Promise",
+    "prefix":["Promise"],
+    "body": "const res = new Promise((resolve, reject) => {\n\t${0}\n})"
+  },
+  
+  "promise.all": {
+    "description": "until all resolve",
+    "prefix":["promise.all"],
+    "body": "const res = Promise.all(${1:array})"
+  },
+  
+  "promise.race": {
+    "description": "until one resolves",
+    "prefix":["Promise.race"],
+    "body": "const res = Promise.race(${1:array})"
+  },
+  
+  "promise.allSettled": {
+    "description": "until one resolves or rejects",
+    "prefix":["Promise.allSettled"],
+    "body": "const res = Promise.allSettled(${1:array})"
+  },
+
+  "promise.all.tasks": {
+    "description": "await until all parallel tasks finish",
+    "prefix":[ "Promise.all async tasks"],
+    "body": [
+      "const ${0:res} = await Promise.all(${1:array}",
+      "\t.map(async ${2:v} => ${3:v}))"
+    ]
+  },
+
+  "promise.race.tasks": {
+    "description": "await for 1st result of parallel tasks",
+    "prefix":[ "Promise.race async tasks"],
+    "body": [
+      "const ${0:res} = await Promise.race(${1:array}",
+      "\t.map(async ${2:v} => ${3}))"
+    ]
+  },
+  
+  "promise.allSettled.tasks": {
+    "description": "await parallel tasks, tolerate rejections",
+    "prefix":[ "Promise.allSettled async tasks"],
+    "body": [
+      "const ${0:res} = await Promise.allSettled(${1:array}",
+      "\t.map(async ${2:v} => ${3}))"
+    ]
+  },
+  
+  "if.guard": {
+    "prefix": "if guard",
+    "body": ["if (${1:value} === ${2:value2}) ", "\treturn false"],
+    "description": "if return"
+  },
+  
+  "if.!guard": {
+    "prefix": "if !guard",
+    "body": ["if (${1:value} !== ${2:value2}) ", "\treturn false"],
+    "description": "if return"
+  },
+
+  "if.ternary": {
+    "prefix": ["if.ternary"],
+    "body": "${1:condition} ? ${2:statement1} : ${3:statement2}",
+    "description": "ternary"
+  },
+  
+  "if else": {
+    "prefix": "if / else",
+    "body": ["if (${1:condition}) ", "\t$2", " else ", "\t$0", ""],
+    "description": "if/else"
+  },
+
+  "switch": {
+    "prefix": "switch",
+    "body": [
+        "switch (${1:key}) {",
+        "\tcase ${2:value}:",
+        "\t\t$0",
+        "\t\tbreak;",
+        "",
+        "\tdefault:",
+        "\t\tbreak;",
+        "}"
+    ],
+    "description": "switch"
+  },
+
+  "for": {
+    "prefix": "for",
+    "body": [
+      "for (let i = 0; i < ${1:arr}.length; i++)",
+      "\t$3\t${1:arr}[i]"
+    ],
+    "description": "for"
+  },
+  
+  "for-multiline": {
+    "prefix": "for { ..... }",
+    "body": [
+      "for (let i = 0; i < ${1:arr}.length; i++) {",
+      "\t\tconst ${2:item} = ${1:arr}[i]",
+      "\t${3:item}",
+      "}"
+    ],
+    "description": "for, multiline"
+  },
+
+  "for-of": {
+    "prefix": "for-of",
+    "body": [
+      "for (const ${1:item} of ${2:array})",
+      "\t${1:item}"
+    ],
+    "description": "for-of loop"
+  },
+
+  "for-of-multiline": {
+    "prefix": "for-of { ..... }",
+    "body": [
+      "for (const ${1:item} of ${2:array}) {",
+      "\t${3:item}",
+      "}"
+    ],
+      "description": "for...of, multiline"
+  },
+  
+  "for-await-of": {
+    "prefix": "for-await-of",
+    "body": [
+      "for await (const ${1:item} of ${2:iterable})",
+      "\n\t $0" 
+    ],
+    "description": "for-await..of"
+  },
+
+  "for-await-of-multiline": {
+    "prefix": "for-await-of { ..... }",
+    "body": [
+      "for await (const ${1:item} of ${2:iterable}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "for-await..of, multiline"
+  },
+
+  "Array.forEach": {
+    "prefix": "Array.each",
+    "body": "${1:array}.forEach(v => {\n\t${2}\n})",
+    "description": "do something for each item"
+  },
+  
+  "Array.map": {
+    "prefix": "Array.map",
+    "body": "${1:array}.map(v => ${2:v})",
+    "description": "map every item to a value"
+  },
+  
+  "Array.includes": {
+    "prefix": "Array.includes",
+    "body": "${1:array}.includes(${2:v})",
+    "description": "at least 1 item equals value"
+  },
+  
+  "Array.reduce": {
+    "prefix": "Array.reduce",
+    "body": "${1:array}.reduce((acc, v) => ${2:v}, [])",
+    "description": "convert array to a value"
+  },
+  
+  "Array.filter": {
+    "prefix": "Array.filter",
+    "body": "${1:array}.filter(v => v.${2:prop} ${3:===} ${4:value})",
+    "description": "drop items"
+  },
+  
+  "Array.find": {
+    "prefix": "Array.find",
+    "body": "${1:array}.find(v => v.${2:prop} ${3:===} ${4:value})",
+    "description": "find single item"
+  },
+  
+  "Array.every": {
+    "prefix": "Array.every",
+    "body": "${1:array}.every(v => v.${2:prop} ${3:===} ${4:value})",
+    "description": "all items pass a test"
+  },
+  
+  "Array.some": {
+    "prefix": "Array.some",
+    "body": "${1:array}.some(v => v.${2:prop} ${3:===} ${4:value})",
+    "description": "at least 1 item passes a test"
+  },
+  
+  "Array.unique": {
+    "prefix": "Array.unique",
+    "body": "[...new Set(${1:array})]",
+    "description": "remove duplicates"
+  },
+  
+  "Array.difference": {
+    "prefix": "Array.difference",
+    "body": "${1:array1}.filter(v => !${2:array2}.includes(v))",
+    "description": "items in array1 but not in array2"
+  },
+  
+  "Array.flatten": {  
+    "prefix": "Array.flatten",
+    "body": "${1:array}.flat(Infinity)",
+    "description": "flatten nested arrays"
+  },
+  
+  "throw new Error": {
+    "prefix": "throw.err",
+    "body": "throw new Error(`${0:error}`)",
+    "description": "generic error"
+  },
+
+  "throw new TypeError": {
+    "prefix": "throw.typerr",
+    "body": "throw new TypeError(`expected: ${1}, got: ${typeof ${2:value}}`)",
+    "description": "value has an incorrect type or/is undefined"
+  },
+  
+  "throw new RangeError": {
+    "prefix": "throw.rangerr",
+    "body": "throw new RangeError(`must be: min:${1} - max:${2}`)",
+    "description": "value is outside of min/max bounds"
+  },
+
+  "try/catch": {
+    "prefix": "try",
+    "body": "try {\n\t${0}\n} catch (${1:err}) {\n\t\n}",
+    "description": "handle error"
+  },
+
+  "try/catch/finally": {
+    "prefix": "try.catch.finally",
+    "body": "try {\n\t${0}\n} catch (${1:err}) {\n\t\n} finally {\n\t\n}",
+    "description": "handle error and cleanup regardless of outcome"
+  },
+
+  "regular.function": {
+    "prefix": "func",
+    "description": "regular named function",
+    "body": "function ${1:name} (${2:arguments}) {\n\t${0}\n}"
+  },
+
+  "async.iife": {
+    "prefix": "async.iife",
+    "description": "define an async IIFE",
+    "body": ";(async (${1:arguments}) => {\n\t${0}\n})(${2})"
+  },
+
+  "arrow.function": {
+    "prefix": ["arrow", "() ="],
+    "description": "arrow function",
+    "body": "(${1:arguments}) => ${2:statement}"
+  },
+  
+  "arrow.function.async": {
+    "prefix": ["arrow.async", "async () ="],
+    "description": "arrow function",
+    "body": "async (${1:arguments}) => ${2:statement}"
+  },
+
+  "arrow.function.full": {
+    "prefix": ["arrow { ..... }", "() => {}"],
+    "description": "arrow function (long)",
+    "body": "(${1:arguments}) => {\n\treturn ${0}\n}"
+  },
+  
+  "arrow.function.async.full": {
+    "prefix": ["arrow.async { ..... }", "async () ="],
+    "description": "arrow function (long)",
+    "body": "async (${1:arguments}) => ${2:statement}"
+  },
+  
+  "arrow.curry": {
+    "prefix": "arrow.curry",
+    "description": "curried arrow function",
+    "body": "const ${1:name} = ${2:argument} => ${3:item} => ${4:statement}"
+  },
+  
+  "function.object.parameter": {
+    "prefix": "parameters.object.default",
+    "description": "parameters.object",
+    "body": "{ ${1:arg} = ${2:default} } = {}"
+  },
+  
+  "parameters.required.validator": {
+    "prefix": "parameters.required.validator",
+    "description": "validate parameter presence",
+    "body": [
+      "const required = (name = 'parameter') => {",
+      "\tthrow new TypeError(`\\required: ${name} is required but not provided`)",
+      "}"
+    ]
+  },
+
+  "parameters.type.validator": {
+    "prefix": "parameters.type.validator",
+    "description": "validate parameter type & presence",
+    "body": [
+      "// @example: const ttl = validated({ ttl: 'number' })",
+      "const validated = (v, type, name = 'parameter') => {",
+      "\tconst allows = ['string', 'number', 'boolean', 'array', 'object']",
+      "\tconst istype = v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v",
+      "\tconst errmsg = typeof type !== 'string' || !allows.includes(type)",
+      "\t\t? `type can be: \\${allows.join(', ')}, got: \\${type}`",
+      "\t\t: istype !== type ? `\\${name} can be: \\${type}, got: \\${istype}` : false",
+      "",
+      "\tif (errmsg) throw new TypeError(errmsg); return v;",
+      "}"
+    ]
+  },
+  
+  "class": {
+    "prefix": "class",
+    "description": "define a class",
+    "body": "class ${1:name} {\n\tconstructor (${2:arguments}) {\n\t\t${0}\n\t}\n}"
+  },
+
+  "class extends": {
+    "prefix": "class.extends",
+    "description": "define a subclass",
+    "body": "class ${1:name} extends ${2:base} {\n\tconstructor (${3:arguments}) {\n\t\tsuper(${3:arguments})\n\t\t${0}\n\t}\n}"
+  },
+
+  "constructor": {
+    "prefix": "construct",
+    "description": "define class constructor",
+    "body": "constructor () {\n\t${0}\n}"
+  },
+
+  "getter": {
+    "prefix": "get",
+    "description": "define getter",
+    "body": "get ${1:property} () {\n\t${0}\n}"
+  },
+
+  "setter": {
+    "prefix": "set",
+    "description": "define setter",
+    "body": "set ${1:property} (${2:value}) {\n\t${0}\n}"
+  },
+
+  "getter + setter": {
+    "prefix": "getter.setter",
+    "description": "define getter and setter",
+    "body": "get ${1:property} () {\n\t${0}\n}\nset ${1:property} (${2:value}) {\n\t\n}"
+  },
+
+  "Object.assign": {
+    "prefix": ["Object.assign", "mixin"],
+    "description": "mixin properties & methods from source to target",
+    "body": "Object.assign(${1:dest}, ${2:source})"
+  },
+
+  "Object.defineProperty": {
+    "prefix": "Object.defineProperty",
+    "description": "define property",
+    "body": "Object.defineProperty(${1:dest}, '${2:prop}', {\t${0}\n})"
+  },
+  
+  "Object.defineProperties": {
+    "prefix": "Object.defineProperties",
+    "description": "define multiple properties",
+    "body": "Object.defineProperties(${1:dest}, { \n\t${2:prop}: { value: 'foo' },\n${0:prop}: { value: 'bar' }\n})"
+  },
+
+  "Object.reduce.to-object": {
+    "prefix": "Object.reduce.to-object",
+    "description": "convert object to another object",
+    "body": [
+      "Object.entries(${1:obj}).reduce((acc, [k, v]) => ({",
+      "\t...acc,",
+      "\t[k]: v",
+      "}, {})"
+    ]
+  },
+
+  "Object.reduce.to-array": {
+    "prefix": "Object.reduce.to-array",
+    "description": "convert object to array",
+    "body": [
+      "Object.entries(${1:obj}).reduce((acc, [k, v]) => ([",
+      "\t...acc,",
+      "\t[k]: v",
+      "], [])"
+    ]
+  },
+  
+  "destructure-array": {
+    "prefix": "destructure.array",
+    "body": "const [ ${2:prop} ] = ${1:array}",
+    "description": "destructure from array"
+  },
+  
+  "destructure-object": {
+    "prefix": "destructure.object",
+    "body": "const { ${2:prop} } = ${1:object}",
+    "description": "destructure from object"
+  },
+  
+  "JSON.stringify()": {
+    "prefix": ["JSON.stringify", "stringify"],
+    "body": "JSON.stringify($0:object)",
+    "description": "serialize object to JSON"
+  },
+  
+  "JSON.parse()": {
+    "prefix": ["JSON.parse", "parse"],
+    "body": "JSON.parse($0:json)",
+    "description": "hydrate JSON to object"
+  },
+
+  "JSON.valid": {
+    "prefix": ["JSON.valid"],
+    "body": [
+      "const isValidJSON = json => {",
+      "\ttry { JSON.parse(json) } catch() { return false } return true",
+      "}"
+    ],
+    "description": "test if JSON is valid/parseable"
+  },
+
+
+  "typeof": {
+    "prefix": "typeof",
+    "body": "typeof ${1:v} === '${2:type}'",
+    "description": "get type of value"
+  },
+
+  "instanceof": {
+    "prefix": "instanceof",
+    "body": "${1:v} instanceof ${2:Class}",
+    "description": "test if value is instance of class"
+  },
+  
+  "module export": {
+    "prefix": "module.export",
+    "body": "export ${1:member}"
+  },
+
+  "module export const": {
+    "prefix": "module.export.const",
+    "body": "export const ${1:member} = ${2:value}"
+  },
+
+  "export named function": {
+    "prefix": "module.export.function",
+    "body": "export function ${1:member} (${2:arguments}) {\n\t${0}\n}"
+  },
+
+  "module default export": {
+    "prefix": "module.export.default",
+    "body": "export default ${1:member}"
+  },
+
+  "export default function": {
+    "prefix": "module.export.default.function",
+    "body": "export default function ${1:name} (${2:arguments}) {\n\t${0}\n}"
+  },
+
+  "import": {
+    "prefix": "module.import",
+    "body": "import {$2} from '${1:module}'",
+    "description": "Import from module."
+  },
+  
+  "import.default": {
+    "prefix": "module.import.default",
+    "body": ["import $0 from \"${1}\""],
+    "description": "Import entire module"
+  },
+  
+  "import module as": {
+    "prefix": "module.import.as.renamed",
+    "body": "import ${2:*} as ${3:name} from '${1:module}'",
+    "description": "Import from module with another name"
+  },
+  
+  "console.log": {
+    "prefix": "console.log",
+    "body": "console.log($0)",
+    "description": "log a value"
+  },
+
+  "console.error": {
+    "prefix": "console.error",
+    "description": "log an error",
+    "body": "console.error($0)"
+  },
+
+  "console.warn": {
+    "prefix": "console.warn",
+    "body": "console.warn($0)",
+    "description": "log a warning"
+  },
+
+  "console.dir": {
+    "prefix": "console.dir",
+    "body": "console.dir($0)",
+    "description": "log detailed properties"
+  },
+  
+  "console.table": {
+    "prefix": "console.table",
+    "body": "console.table(${1:array}, [$2])",
+    "description": "log array as table, opt. specify columns"
+  },
+  
+  "test boilerplate": {
+    "prefix":["tests"],
+    "description": "test boilerplate",
+    "body": [
+      "import { test } from 'node:test'",
+      "import { ${1:subject} } from '../index.js'\n",
+      "test('#${1:subject}()', async t => {",
+      "const result = await ${1:subject}(${2})\n",
+      "\t\tawait t.test('${3:test case}', async t => {\n\t",
+      "\t\t\tawait t.test('returns a(n): ${4:type}', t => {\t",
+      "\t\t\tt.assert.ok(result)",
+      "\t\t\tt.assert.strictEqual(typeof result, '${4:type}')",
+      "\t})",
+      "\t\t})",
+      "\n// ... more tests",
+      "})"
+    ]
+  },
+
+  "test equal": {
+    "prefix": ["test.equal"],
+    "description": "test for type",
+    "body": "await t.test('${1:expectation}', t => {\n\tt.assert.${2:equals}(${3:result}, ${4:expected})\n})"
+  },
+  
+  "test type": {
+    "prefix": ["test.type"],
+    "description": "test for value",
+    "body": "await t.test('is a: ${0:type}', t => {\n\tt.assert.equal(typeof result, '${0:type}')\n})"
+  },
+  
+  "test throws": {
+    "prefix": ["test.throws"],
+    "description": "test for synchronous exception",
+    "body": [
+      "await t.test('throws a descriptive ${3:TypeError}', t => {",
+      "\tt.assert.throws(() => ${1:subject}($2), {",
+      "\t\tname: '${3:TypeError}',",
+      "\t\tmessage: /$4/",
+      "\t})",
+      "})"
+    ]
+  },
+  
+  "test rejects": {
+    "prefix": ["test.throws"],
+    "description": "test for async rejection",
+    "body": [
+      "await t.test('throws a descriptive ${3:TypeError}', t => {",
+      "\tawait t.assert.rejects(() => ${1:subject}($2), {",
+      "\t\tname: '${3:TypeError}',",
+      "\t\tmessage: /$4/",
+      "\t})",
+      "})"
+    ]
+  },
+
+  "before": {
+    "prefix": ["test.hook.before"],
+    "description": "run once, before tests",
+    "body": "before(async () => ${0})"
+  },
+
+  "beforeEach": {
+    "prefix": ["test.hook.before-each"],
+    "description": "run before every test",
+    "body": "beforeEach(async () => ${0})"
+  },
+
+  "after": {
+    "prefix": ["test.hook.after"],
+    "description": "run once, after tests",
+    "body": "after(async () => ${0})"
+  },
+  
+  "afterEach": {
+    "prefix": ["test.hook.after-each"],
+    "description": "run after every test",
+    "body": "afterEach(async () => ${0})"
+  },
+  
+  "misc.setImmediate": {
+    "prefix": ["setImmediate", "process.nextTick"],
+    "body": "setImmediate(() => {\n\t${0}\n})",
+    "description": "on next event loop"
+  },
+
+  "misc.sleep": {
+    "description": "add async delay",
+    "prefix": ["sleep", "wait", "delay", "timeout"],  
+    "body": "await new Promise(r => setTimeout(r, ${0}))"
+  },
+
+  "misc.process.env": {
+    "description": "environment variables",
+    "prefix": ["ENV"],
+    "body": "process.env"
+  },
+  
+  "misc.process.env === production": {
+    "description": "environment is production",
+    "prefix": ["ENV.NODE_ENV === production"],
+    "body": [
+      "if(['production'].includes(process.env?.NODE_ENV))",
+      "\t\t${0}"
+    ]
+  },
+  
+  "misc.process.env === test": {
+    "description": "environment is test",
+    "prefix": ["ENV.NODE_ENV === test"],
+    "body": [
+      "if(['test'].includes(process.env?.NODE_ENV))",
+      "\t\t${0}"
+    ]
+  },
+  
+  "util.integers.1.to.n": {
+    "prefix": "util.generate.integers.1-to-n",
+    "body": "Array.from({ length: ${1:length} }, (_, k) => k + 1)",
+    "description": "array of integers, 1 based"
+  },
+
+  "util.integers.0.to.n": {
+    "prefix": "util.generate.integers.0-to-n",
+    "body": "[...Array(${1:length}).keys()]",
+    "description": "array of integers, 0 based"
+  },
+  
+  "util.random.integer": {
+    "prefix": ["util.random.integer", "rand"],
+    "body": [
+      "const rand = ({ round, random } = Math) => round((random() * (999999 - 1) + 1))"
+    ],
+    "description": "random integer in range: 1 - 999999"
+  },
+  
+  "util.uuid": {
+    "prefix": ["util.random.uuid", "uuid"],
+    "body": [
+      "const uuid = $0crypto.randomUUID()"
+    ],
+    "description": "cryptographically secure UUID"
+  },
+  
+  "wrap.arrow": {
+    "prefix": "wrap.selection.as.arrow",
+    "body": "() => {\n\t{$TM_SELECTED_TEXT}\n}",
+    "description": "wrap selection as function"
+  },
+
+  "wrap.async.arrow": {
+    "prefix": "wrap.selection.as.async.arrow",
+    "body": "async () => {\n\t{$TM_SELECTED_TEXT}\n}",
+    "description": "wrap selection as async function"
+  }
+}
