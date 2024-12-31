@@ -3,9 +3,8 @@
 source .porcelain.bash
 
 @test "restores terminal.app profile" {
-  skip "avoid messing up local profiles"
+  skip "messes up terminal"
 }
-
 
 @test "handles import failures" {
   # mock 'defaults' to simulate failure
