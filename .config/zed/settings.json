@@ -220,6 +220,11 @@
   
   // Languages
 
+  "file_types": {
+    // hidden files and BATS test files
+    "Shell Script": [".*", "*.bats"]
+  },
+  
   "languages": {
     "Shell Script": {
       "tab_size": 2
