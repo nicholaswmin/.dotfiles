@@ -221,8 +221,8 @@
   // Languages
 
   "file_types": {
-    // hidden files and BATS test files
-    "Shell Script": [".*", "*.bats"]
+    // all dotfiles, bash, bats
+    "Shell Script": [".*", ".bash", "*.bats"]
   },
   
   "languages": {
