@@ -13,6 +13,9 @@ if [ -f ~/.dotfiles/.git-completion.bash ]; then
   . ~/.dotfiles/.git-completion.bash
 fi
 
+# gh completions 
+eval "$(gh completion -s bash)"
+
 # utility functions
 source ~/.dotfiles/.ps1.bash
 source ~/.dotfiles/.porcelain.bash
