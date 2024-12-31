@@ -72,7 +72,16 @@ not() {
 # example: notfile "$1" "filename" || return 1
 notfile() {
   if [ ! -f "$1" ]; then
-    printerr "file '$1' does not exist/or is not a regular file"
+    printerr "'$2' does not exist/or is not a file"
+    return 1
+  fi
+
+  return 0
+}
+
+notdir() {
+  if [ ! -d "$1" ]; then
+    printerr "'$1' does not exist/or is not a regular file"
     return 1
   fi
 
@@ -142,12 +151,13 @@ print_permissions_instructions() {
 }
 
 
-# Export Terminal.app settings (theme, shell settings etc)
+# export Terminal.app settings 
 # 
 #  usage: backup_terminal_profile "<output-directory>"
 # example: backup_terminal_profile "$HOME/.dotfiles/terminal"
 backup_terminal_profile() {
   not "$1" "output directory" || return 1
+  notdir "$1" || return 1
 
   OUTPUT_DIR="${1}"
   OUTPUT_FILE="backup.terminal"
@@ -166,12 +176,13 @@ backup_terminal_profile() {
 }
 
 
-# Import Terminal.app settings (theme, shell settings etc)
+# restore Terminal.app settings 
 # 
 # usage: restore_terminal_profile "<input-directory>"
 # example: restore_terminal_profile "$HOME/.dotfiles/terminal"
 restore_terminal_profile() {
   not "$1" "input directory" || return 1
+  notdir "$1" || return 1
 
   INPUT_DIR="${1}"
   INPUT_FILE="backup.terminal"

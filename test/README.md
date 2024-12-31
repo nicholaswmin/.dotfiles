@@ -1,10 +1,8 @@
 # tests
 
-via [BATS:Bash Automated Testing System][bats-core].
+via [BATS].
 
 ## install 
-
-macOS:
 
 ```bash
 brew install bats-core
@@ -13,16 +11,16 @@ brew install bats-core
 ## run
 
 ```bash 
-$ bats --verbose-run --pretty -r test
+$ bats test
 ```
 
 ## guidelines
 
 - 1 test file per [porcelain function][porcelain].
-- just test the happy path & at least 1 edge case.
-- avoid mocking *entirely*, if possible.
+- test the happy path & at least 1 edge case.
+- avoid mocking.
 
-> stupidly simple & clutter-free test files **>** exhaustive testing.
+> simple test files **>** exhaustive testing.
 
 ### author
 

@@ -56,31 +56,34 @@ bytecount() {
   return 0
 }
 
-# Copy  non-symlinked settings (terminal profile, fonts etc)
-# 
+# backup various non-symlinked settings 
 #    usage: backup
 #  example: backup
 backup() {  
-  # Define the output directory and file
-  DIR="$HOME/.dotfiles/terminal"
-  backup_terminal_profile "$DIR"
+  backup_terminal_profile "${1:-"$HOME/.dotfiles/terminal"}"
+  local status=$?
+  
   printok "done, now commit and push..."
+
+  return $status
 }
 
-# Restore non-symlinked settings (terminal profile, fonts etc)
+# restore various non-symlinked settings 
 # 
 #   usage: restore
 # example: restore
 restore() {
-  # Define the output directory and file
-  DIR="$HOME/.dotfiles/terminal"
-  restore_terminal_profile "$DIR"
+  restore_terminal_profile "${1:-"$HOME/.dotfiles/terminal"}"
+  local status=$?
+  
   printok "restore completed. restart Terminal.app..."
+  
+  return $status
 }
 
 # apply changes in .bash_profile & .bash_rc
 # - a missing .bash_rc will be logged but won't cause an error.
-# 
+#   
 #    usage: refresh
 #  example: refresh
 refresh() { 
