@@ -4,7 +4,9 @@
 col() {
   local color="$1" text="$2"
   
-  if [[ -n "${NO_COLOR}" ]] || { [[ ! -t 1 ]] && [[ -z "${FORCE_COLOR}" ]]; }; then
+  # FIX: The original line had a complex grouping that caused a syntax error.
+  # This simpler grouping resolves the 'parse error'.
+  if [[ -n "${NO_COLOR}" ]] || ( [[ ! -t 1 ]] && [[ -z "${FORCE_COLOR}" ]] ); then
     printf "%s" "$text"
     return
   fi
