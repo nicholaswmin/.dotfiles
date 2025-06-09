@@ -1,22 +1,61 @@
 #!/usr/bin/env zsh
 # dotfiles - macOS dotfiles management CLI
 
+readonly SCRIPT_NAME="dotfiles"
 readonly DOTFILES_ROOT="$HOME/.dotfiles"
 readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
 
-# Source libraries
+# Source all libraries
 source "$(dirname "$0")/_lib/loggers.sh"
+source "$(dirname "$0")/_lib/validation.sh"
 source "$(dirname "$0")/_lib/init.sh"
 source "$(dirname "$0")/_lib/link.sh"
+source "$(dirname "$0")/_lib/unlink.sh"
+source "$(dirname "$0")/_lib/backup.sh"
+source "$(dirname "$0")/_lib/restore.sh"
+
+is_dotfiles_repo() {
+  [[ -d "$DOTFILES_ROOT/.git" ]] && [[ -d "$DOTFILES_HOME" ]]
+}
+
+require_repo() {
+  is_dotfiles_repo || {
+    log_error "Not in a dotfiles repository" \
+      "- Initialize with: dotfiles init" \
+      "- Clone existing: dotfiles init <remote_url>"
+    exit 1
+  }
+}
+
+show_help() {
+  printf "\n ⚙️  dotfiles\n   macOS dotfiles management\n\n"
+  printf " usage:\n  dotfiles <command> [options]\n\n"
+  printf " commands:\n"
+  printf "  init [remote]               # initialize dotfiles repo\n"
+  printf "  link <path>                 # link file or directory\n"
+  printf "  unlink <path>               # unlink file or directory\n"
+  printf "  restore                     # restore from remote\n"
+  printf "  backup [message]            # commit and push changes\n\n"
+  printf "  -h, --help                  # show this help\n"
+  printf "  -v, --version               # show version\n\n"
+}
+
+show_version() {
+  printf "dotfiles v1.0.0 (macOS)\n"
+}
 
 main() {
   case "$1" in
-    init) init_cmd "$@" ;;
-    link) link_cmd "$@" ;;
-    --help) show_help ;;
-    --version) show_version ;;
-    *) echo "Unknown command: $1"; exit 1 ;;
+    init) shift; init_cmd "$@" ;;
+    link) shift; require_repo; link_cmd "$@" ;;
+    unlink) shift; require_repo; unlink_cmd "$@" ;;
+    restore) shift; restore_cmd "$@" ;;
+    backup) shift; require_repo; backup_cmd "$@" ;;
+    -h|--help) show_help ;;
+    -v|--version) show_version ;;
+    "") show_help; exit 1 ;;
+    *) log_error "Unknown command: $1"; exit 1 ;;
   esac
 }
 
-main "$@" 
+main "$@"
