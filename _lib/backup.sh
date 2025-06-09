@@ -80,4 +80,6 @@ backup_cmd() {
   
   push_changes || exit 1
 
+ 
   log_done "Dotfiles successfully pushed to remote"
+}
