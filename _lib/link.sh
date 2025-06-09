@@ -76,8 +76,7 @@ link_file() {
     return 1
   }
   
-  cd "$DOTFILES_ROOT" || return 1
-  git add "$repo_path" || {
+git -C "$DOTFILES_ROOT" add "$repo_path" || {  git add "$repo_path" || {
     log_error "Failed to stage file in Git"
     return 1
   }
