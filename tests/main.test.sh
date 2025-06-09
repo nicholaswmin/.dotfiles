@@ -31,75 +31,71 @@ section() {
 }
 
 setup_test_env() {
-  mkdir -p "~/.dotfiles/home" || { printf "ERROR: Failed to create %s\n" "~/.dotfiles/home"; exit 1; }
-
-  echo "test content for real home" > "~/.testrc"
-
-  if [[ ! -d "~/.dotfiles/.git" ]]; then
-    git init "~/.dotfiles" || { printf "ERROR: Failed to git init real repo in %s\n" "~/.dotfiles"; exit 1; }
+  if [[ ! -x "./dotfiles" ]]; then
+    chmod +x "./dotfiles" || { printf "ERROR: Failed to make ./dotfiles executable for init command\n"; exit 1; }
   fi
-  git config --global --add safe.directory "~/.dotfiles"
 
-  git --git-dir="~/.dotfiles/.git" --work-tree="~/.dotfiles" add --all && \
-  git --git-dir="~/.dotfiles/.git" --work-tree="~/.dotfiles" commit -m "Initial commit for test setup" --allow-empty || { printf "ERROR: Git setup in %s failed\n" "~/.dotfiles"; exit 1; }
+  export DOTFILES_ROOT="$HOME/.dotfiles"
+  export DOTFILES_HOME="$HOME/.dotfiles/home"
+
+  ./dotfiles init || { printf "ERROR: 'dotfiles init' command failed\n"; exit 1; }
+  
+  echo "test content for real home" > "~/.testrc"
 }
 
 printf "** dotfiles test suite **\n"
-printf "Contents of current directory:\n"
+printf "Contents of current directory (repository checkout):\n"
 ls -la || true
 printf "\n"
 
-if [[ ! -f "~/.dotfiles/dotfiles" ]]; then
-  printf "ERROR: Cannot find ~/.dotfiles/dotfiles. Ensure your CI environment checks out the repository directly into ~/.dotfiles.\n"
-  exit 1
+if [[ ! -x "./dotfiles" ]]; then
+  printf "ERROR: ./dotfiles exists but is not executable\n"
+  chmod +x "./dotfiles" || printf "Failed to make executable\n"
 fi
 
-if [[ ! -x "~/.dotfiles/dotfiles" ]]; then
-  printf "ERROR: ~/.dotfiles/dotfiles exists but is not executable\n"
-  chmod +x "~/.dotfiles/dotfiles" || printf "Failed to make executable\n"
-fi
-
-if [[ -f "~/.dotfiles/install.sh" && ! -x "~/.dotfiles/install.sh" ]]; then
-  chmod +x "~/.dotfiles/install.sh" || printf "Failed to make install.sh executable\n"
+if [[ -f "./install.sh" && ! -x "./install.sh" ]]; then
+  chmod +x "./install.sh" || printf "Failed to make install.sh executable\n"
 fi
 
 section "structure"
-test "dotfiles executable exists" "[[ -x ~/.dotfiles/dotfiles ]]"
-test "install script exists" "[[ -x ~/.dotfiles/install.sh ]]"
-test "readme exists" "[[ -f ~/.dotfiles/README.md ]]"
-test "gitignore exists" "[[ -f ~/.dotfiles/.gitignore ]]"
-test "lib directory exists" "[[ -d ~/.dotfiles/_lib ]]"
-test "home directory exists" "[[ -d ~/.dotfiles/home ]]"
+test "dotfiles executable exists" "[[ -x ./dotfiles ]]"
+test "install script exists" "[[ -x ./install.sh ]]"
+test "readme exists" "[[ -f ./README.md ]]"
+test "gitignore exists" "[[ -f ./.gitignore ]]"
+test "lib directory exists" "[[ -d ./_lib ]]"
+test "home directory exists" "[[ -d ./home ]]"
 
 section "libraries"
-test "loggers library exists" "[[ -f ~/.dotfiles/_lib/loggers.sh ]]"
-test "validation library exists" "[[ -f ~/.dotfiles/_lib/validation.sh ]]"
-test "init library exists" "[[ -f ~/.dotfiles/_lib/init.sh ]]"
-test "link library exists" "[[ -f ~/.dotfiles/_lib/link.sh ]]"
-test "unlink library exists" "[[ -f ~/.dotfiles/_lib/unlink.sh ]]"
-test "backup library exists" "[[ -f ~/.dotfiles/_lib/backup.sh ]]"
-test "restore library exists" "[[ -f ~/.dotfiles/_lib/restore.sh ]]"
+test "loggers library exists" "[[ -f ./_lib/loggers.sh ]]"
+test "validation library exists" "[[ -f ./_lib/validation.sh ]]"
+test "init library exists" "[[ -f ./_lib/init.sh ]]"
+test "link library exists" "[[ -f ./_lib/link.sh ]]"
+test "unlink library exists" "[[ -f ./_lib/unlink.sh ]]"
+test "backup library exists" "[[ -f ./_lib/backup.sh ]]"
+test "restore library exists" "[[ -f ./_lib/restore.sh ]]"
 
 section "syntax"
-test "dotfiles syntax valid" "zsh -n ~/.dotfiles/dotfiles"
-test "install script syntax valid" "zsh -n ~/.dotfiles/install.sh"
-test "loggers syntax valid" "zsh -n ~/.dotfiles/_lib/loggers.sh"
-test "validation syntax valid" "zsh -n ~/.dotfiles/_lib/validation.sh"
-test "init syntax valid" "zsh -n ~/.dotfiles/_lib/init.sh"
-test "link syntax valid" "zsh -n ~/.dotfiles/_lib/link.sh"
-test "unlink syntax valid" "zsh -n ~/.dotfiles/_lib/unlink.sh"
-test "backup syntax valid" "zsh -n ~/.dotfiles/_lib/backup.sh"
-test "restore syntax valid" "zsh -n ~/.dotfiles/_lib/restore.sh"
+test "dotfiles syntax valid" "zsh -n ./dotfiles"
+test "install script syntax valid" "zsh -n ./install.sh"
+test "loggers syntax valid" "zsh -n ./_lib/loggers.sh"
+test "validation syntax valid" "zsh -n ./_lib/validation.sh"
+test "init syntax valid" "zsh -n ./_lib/init.sh"
+test "link syntax valid" "zsh -n ./_lib/link.sh"
+test "unlink syntax valid" "zsh -n ./_lib/unlink.sh"
+test "backup syntax valid" "zsh -n ./_lib/backup.sh"
+test "restore syntax valid" "zsh -n ./_lib/restore.sh"
 
 section "commands"
-test "help command works" "~/.dotfiles/dotfiles --help"
-test "version command works" "~/.dotfiles/dotfiles --version"
-test "rejects unknown commands" "! ~/.dotfiles/dotfiles badcommand"
+test "help command works" "./dotfiles --help"
+test "version command works" "./dotfiles --version"
+test "rejects unknown commands" "! ./dotfiles badcommand"
 
 section "integration (CI only)"
 if [[ -n "${IS_ENV_CI}" ]]; then
+  printf "     (running integration tests - this involves initializing dotfiles to ~/.dotfiles)\n"
   setup_test_env
   
+  test "dotfiles executable is installed" "[[ -x ~/.dotfiles/dotfiles ]]"
   test "link file creates symlink" "~/.dotfiles/dotfiles link ~/.testrc && [[ -L ~/.testrc ]]"
   test "linked file exists in repo" "[[ -f ~/.dotfiles/home/.testrc ]]"
   test "symlink points to repo" "[[ \"$(readlink ~/.testrc)\" == \"~/.dotfiles/home/.testrc\" ]]"
