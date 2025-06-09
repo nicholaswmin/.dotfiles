@@ -12,9 +12,11 @@ test() {
   
   local output
   local exit_code
+  # Execute the command and capture its output and exit code
   output=$(eval "$command" 2>&1)
   exit_code=$?
   
+  # Check the actual exit code, without defaulting to 0
   if [[ $exit_code -eq 0 ]]; then
     printf "✓    %s\n" "$name"
     ((TESTS_PASSED++))
@@ -22,7 +24,8 @@ test() {
     printf "✗    %s\n" "$name"
     printf "     Command: %s\n" "$command"
     printf "     Output: %s\n" "$output"
-    printf "     Exit: %d\n" "$exit_code"
+    printf "     Exit: %d\n" "$exit_code" # Print the actual exit code
+    ((TESTS_FAILED++))
   fi
 }
 
@@ -40,7 +43,8 @@ setup_test_env() {
 
   ./dotfiles init || { printf "ERROR: 'dotfiles init' command failed\n"; exit 1; }
   
-  printf "test content for real home\n" > "~/.testrc"
+  # Using $HOME explicitly for creating ~/.testrc for robustness
+  printf "test content for real home\n" > "$HOME/.testrc"
 }
 
 printf "** dotfiles test suite **\n"
