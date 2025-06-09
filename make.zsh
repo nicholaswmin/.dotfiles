@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# make.zsh - Complete macOS dotfiles system generator
+# make.zsh - Complete macOS dotfiles system generator with fixed CI tests
 # usage: ./make.zsh [--help]
 
 # =============================================================================
@@ -1084,7 +1084,7 @@ EOF
 }
 
 # =============================================================================
-# Test Suite Generation
+# Test Suite Generation - FIXED VERSION
 # =============================================================================
 
 generate_test_suite() {
@@ -1092,7 +1092,7 @@ generate_test_suite() {
   
   cat > "tests/main.test.sh" << 'EOF'
 #!/usr/bin/env zsh
-# main.test.sh - Core functionality tests for dotfiles generator with debug output
+# main.test.sh - Core functionality tests for dotfiles generator
 
 readonly TEST_NAME="Dotfiles Generator Core Tests"
 readonly TEST_DIR="/tmp/dotfiles-test-$(date +%s)"
@@ -1132,16 +1132,28 @@ setup_test_environment() {
     exit 1
   }
   
-  if [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
-    cp "$SCRIPT_DIR/../make.zsh" . || {
-      echo "ERROR: Failed to copy make.zsh"
+  # Look for make.zsh in current directory first, then parent
+  if [[ -f "$SCRIPT_DIR/make.zsh" ]]; then
+    cp "$SCRIPT_DIR/make.zsh" . || {
+      echo "ERROR: Failed to copy make.zsh from current directory"
       exit 1
     }
-    chmod +x make.zsh
+  elif [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
+    cp "$SCRIPT_DIR/../make.zsh" . || {
+      echo "ERROR: Failed to copy make.zsh from parent directory"
+      exit 1
+    }
   else
-    echo "ERROR: Cannot find make.zsh in parent directory"
+    echo "ERROR: Cannot find make.zsh in current or parent directory"
+    echo "DEBUG: SCRIPT_DIR=$SCRIPT_DIR"
+    echo "DEBUG: Current dir contents:"
+    ls -la "$SCRIPT_DIR/" 2>/dev/null || echo "Cannot list current dir"
+    echo "DEBUG: Parent dir contents:"
+    ls -la "$SCRIPT_DIR/../" 2>/dev/null || echo "Cannot list parent dir"
     exit 1
   fi
+  
+  chmod +x make.zsh
 }
 
 cleanup_test_environment() {
@@ -1308,8 +1320,11 @@ setup_test_environment() {
   mkdir -p "$FAKE_HOME/.ssh"
   echo "Host *" > "$FAKE_HOME/.ssh/config"
   
+  # Check if we have the generated dotfiles structure
   if [[ ! -d "$SCRIPT_DIR/_lib" ]]; then
-    printf "ERROR: Generated dotfiles not found. Run generator first.\n" >&2
+    printf "ERROR: Generated dotfiles not found. Current directory structure:\n" >&2
+    ls -la "$SCRIPT_DIR/" >&2
+    printf "Looking for _lib directory in: $SCRIPT_DIR\n" >&2
     exit 1
   fi
   
@@ -1440,10 +1455,12 @@ echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
 
 echo
+echo "Running generator tests..."
 "$SCRIPT_DIR/main.test.sh"
 main_result=$?
 
 echo
+echo "Running CLI tests..."
 "$SCRIPT_DIR/e2e.test.sh"
 e2e_result=$?
 
@@ -1470,7 +1487,7 @@ EOF
 }
 
 # =============================================================================
-# GitHub Actions Workflow Generation (Simplified)
+# GitHub Actions Workflow Generation
 # =============================================================================
 
 generate_github_workflow() {
@@ -1703,7 +1720,7 @@ main() {
   log_spacer
   
   # Phase 1: Validation and Cleanup
-  #validate_macos || exit 1
+  # validate_macos || exit 1
   validate_cleanup_safety || exit 1
   cleanup_directory || exit 1
   

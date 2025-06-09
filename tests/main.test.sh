@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# main.test.sh - Core functionality tests for dotfiles generator with debug output
+# main.test.sh - Core functionality tests for dotfiles generator
 
 readonly TEST_NAME="Dotfiles Generator Core Tests"
 readonly TEST_DIR="/tmp/dotfiles-test-$(date +%s)"
@@ -39,16 +39,28 @@ setup_test_environment() {
     exit 1
   }
   
-  if [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
-    cp "$SCRIPT_DIR/../make.zsh" . || {
-      echo "ERROR: Failed to copy make.zsh"
+  # Look for make.zsh in current directory first, then parent
+  if [[ -f "$SCRIPT_DIR/make.zsh" ]]; then
+    cp "$SCRIPT_DIR/make.zsh" . || {
+      echo "ERROR: Failed to copy make.zsh from current directory"
       exit 1
     }
-    chmod +x make.zsh
+  elif [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
+    cp "$SCRIPT_DIR/../make.zsh" . || {
+      echo "ERROR: Failed to copy make.zsh from parent directory"
+      exit 1
+    }
   else
-    echo "ERROR: Cannot find make.zsh in parent directory"
+    echo "ERROR: Cannot find make.zsh in current or parent directory"
+    echo "DEBUG: SCRIPT_DIR=$SCRIPT_DIR"
+    echo "DEBUG: Current dir contents:"
+    ls -la "$SCRIPT_DIR/" 2>/dev/null || echo "Cannot list current dir"
+    echo "DEBUG: Parent dir contents:"
+    ls -la "$SCRIPT_DIR/../" 2>/dev/null || echo "Cannot list parent dir"
     exit 1
   fi
+  
+  chmod +x make.zsh
 }
 
 cleanup_test_environment() {

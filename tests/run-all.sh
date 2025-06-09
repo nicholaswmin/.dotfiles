@@ -7,10 +7,12 @@ echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
 
 echo
+echo "Running generator tests..."
 "$SCRIPT_DIR/main.test.sh"
 main_result=$?
 
 echo
+echo "Running CLI tests..."
 "$SCRIPT_DIR/e2e.test.sh"
 e2e_result=$?
 

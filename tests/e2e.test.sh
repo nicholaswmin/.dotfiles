@@ -38,8 +38,11 @@ setup_test_environment() {
   mkdir -p "$FAKE_HOME/.ssh"
   echo "Host *" > "$FAKE_HOME/.ssh/config"
   
+  # Check if we have the generated dotfiles structure
   if [[ ! -d "$SCRIPT_DIR/_lib" ]]; then
-    printf "ERROR: Generated dotfiles not found. Run generator first.\n" >&2
+    printf "ERROR: Generated dotfiles not found. Current directory structure:\n" >&2
+    ls -la "$SCRIPT_DIR/" >&2
+    printf "Looking for _lib directory in: $SCRIPT_DIR\n" >&2
     exit 1
   fi
   
