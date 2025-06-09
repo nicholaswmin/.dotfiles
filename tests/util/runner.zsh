@@ -66,11 +66,8 @@ todo() {
   ((TESTS_RUN++))
   ((TESTS_TODO++))
   
-  if eval "$command" &>/dev/null; then
-    printf "✓    %s (TODO: unexpected pass)\n" "$name"
-  else
-    printf "-    %s (TODO)\n" "$name"
-  fi
+  # Don't execute command for TODO items - just mark as todo
+  printf "-    %s (TODO)\n" "$name"
 }
 
 section() { 
