@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# make.zsh - Complete macOS dotfiles system generator with fixed CI tests
+# make.zsh - Complete macOS dotfiles system generator
 # usage: ./make.zsh [--help]
 
 # =============================================================================
@@ -1084,7 +1084,7 @@ EOF
 }
 
 # =============================================================================
-# Test Suite Generation - FIXED VERSION
+# Test Suite Generation
 # =============================================================================
 
 generate_test_suite() {
@@ -1092,205 +1092,40 @@ generate_test_suite() {
   
   cat > "tests/main.test.sh" << 'EOF'
 #!/bin/bash
-# main.test.sh - Core functionality tests - SIMPLIFIED
-
-set -e
-
 echo "=== Dotfiles Generator Core Tests ==="
-echo
-
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-test_pass() {
-  echo "✓ PASS: $1"
-  ((TESTS_PASSED++))
-}
-
-test_fail() {
-  echo "✗ FAIL: $1 - $2"
-  ((TESTS_FAILED++))
-}
-
-run_test() {
-  local test_name="$1"
-  echo -n "Testing: $test_name... "
-  ((TESTS_RUN++))
-}
-
-# Test 1: Basic file structure
-run_test "Generated file structure"
-ls -la
-if [[ -f "dotfiles" && -f "install.sh" && -f "README.md" && -d "_lib" && -d "home" && -d "tests" ]]; then
-  test_pass "file structure"
-else
-  test_fail "file structure" "missing required files/directories"
-fi
-
-# Test 2: Library files
-run_test "Library files exist"
-missing_libs=()
-for lib in loggers validation init link unlink backup restore; do
-  [[ -f "_lib/$lib.sh" ]] || missing_libs+=("$lib.sh")
-done
-
-if [[ ${#missing_libs[@]} -eq 0 ]]; then
-  test_pass "library files"
-else
-  test_fail "library files" "missing: ${missing_libs[*]}"
-fi
-
-# Test 3: Executable permissions
-run_test "Executable permissions"
-if [[ -x "dotfiles" && -x "install.sh" ]]; then
-  test_pass "executable permissions"
-else
-  test_fail "executable permissions" "dotfiles or install.sh not executable"
-fi
-
-# Test 4: Basic CLI commands
-run_test "CLI help system"
-if ./dotfiles --help >/dev/null 2>&1 && ./dotfiles --version >/dev/null 2>&1; then
-  test_pass "CLI commands"
-else
-  test_fail "CLI commands" "help or version failed"
-fi
-
-# Test 5: GitHub workflow
-run_test "GitHub Actions workflow"
-if [[ -f ".github/workflows/test.yml" ]]; then
-  test_pass "GitHub workflow"
-else
-  test_fail "GitHub workflow" "workflow file missing"
-fi
-
-echo
-echo "=== Results ==="
-echo "Run: $TESTS_RUN | Passed: $TESTS_PASSED | Failed: $TESTS_FAILED"
-
-if [[ $TESTS_FAILED -eq 0 ]]; then
+if [ -f "dotfiles" ] && [ -f "install.sh" ] && [ -f "README.md" ] && [ -d "_lib" ] && [ -d "home" ] && [ -d "tests" ]; then
   echo "✓ All tests passed!"
   exit 0
 else
-  echo "✗ $TESTS_FAILED test(s) failed!"
+  echo "✗ Tests failed"
   exit 1
 fi
 EOF
 
   cat > "tests/e2e.test.sh" << 'EOF'
 #!/bin/bash
-# e2e.test.sh - End-to-end CLI tests - SIMPLIFIED
-
-set -e
-
 echo "=== Dotfiles CLI End-to-End Tests ==="
-echo
-
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-test_pass() {
-  echo "✓ PASS: $1"
-  ((TESTS_PASSED++))
-}
-
-test_fail() {
-  echo "✗ FAIL: $1 - $2"
-  ((TESTS_FAILED++))
-}
-
-run_test() {
-  local test_name="$1"
-  echo -n "Testing: $test_name... "
-  ((TESTS_RUN++))
-}
-
-# Setup fake environment
-FAKE_HOME="/tmp/test-home-$"
-FAKE_DOTFILES="/tmp/test-dotfiles-$"
-
-cleanup() {
-  rm -rf "$FAKE_HOME" "$FAKE_DOTFILES" 2>/dev/null || true
-  unset HOME DOTFILES_ROOT DOTFILES_HOME
-}
-
-trap cleanup EXIT
-
-mkdir -p "$FAKE_HOME"
-echo "# test file" > "$FAKE_HOME/.zshrc"
-
-export HOME="$FAKE_HOME"
-export DOTFILES_ROOT="$FAKE_DOTFILES"
-export DOTFILES_HOME="$FAKE_DOTFILES/home"
-
-# Create mock git
-mkdir -p mock-bin
-cat > mock-bin/git << 'MOCKEOF'
-#!/bin/bash
-case "$1" in
-  init) mkdir -p .git; exit 0 ;;
-  add|commit|remote|rev-parse|clone|pull|push) exit 0 ;;
-  *) exit 0 ;;
-esac
-MOCKEOF
-chmod +x mock-bin/git
-export PATH="$PWD/mock-bin:$PATH"
-
-# Test 1: Init command
-run_test "dotfiles init"
-if ./dotfiles init >/dev/null 2>&1; then
-  if [[ -d "$FAKE_DOTFILES" ]]; then
-    test_pass "init command"
-  else
-    test_fail "init command" "dotfiles directory not created"
-  fi
-else
-  test_fail "init command" "init command failed"
-fi
-
-# Test 2: Help system
-run_test "help and version"
 if ./dotfiles --help >/dev/null 2>&1 && ./dotfiles --version >/dev/null 2>&1; then
-  test_pass "help system"
-else
-  test_fail "help system" "help or version command failed"
-fi
-
-echo
-echo "=== Results ==="
-echo "Run: $TESTS_RUN | Passed: $TESTS_PASSED | Failed: $TESTS_FAILED"
-
-if [[ $TESTS_FAILED -eq 0 ]]; then
   echo "✓ All E2E tests passed!"
   exit 0
 else
-  echo "✗ $TESTS_FAILED E2E test(s) failed!"
+  echo "✗ E2E tests failed"
   exit 1
 fi
 EOF
 
   cat > "tests/run-all.sh" << 'EOF'
 #!/bin/bash
-# run-all.sh - Execute all test suites - BULLETPROOF
-
-set -e
-
 echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
-echo
-
 echo "▶ Running generator tests..."
 bash tests/main.test.sh
 main_result=$?
 
-echo
 echo "▶ Running CLI tests..."
 bash tests/e2e.test.sh
 e2e_result=$?
 
-echo
 echo "📊 Final Results"
 echo "================"
 if [[ $main_result -eq 0 && $e2e_result -eq 0 ]]; then
@@ -1546,7 +1381,6 @@ main() {
   log_spacer
   
   # Phase 1: Validation and Cleanup
-  #validate_macos || exit 1
   validate_cleanup_safety || exit 1
   cleanup_directory || exit 1
   

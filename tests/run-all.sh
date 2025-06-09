@@ -1,22 +1,14 @@
 #!/bin/bash
-# run-all.sh - Execute all test suites - BULLETPROOF
-
-set -e
-
 echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
-echo
-
 echo "▶ Running generator tests..."
 bash tests/main.test.sh
 main_result=$?
 
-echo
 echo "▶ Running CLI tests..."
 bash tests/e2e.test.sh
 e2e_result=$?
 
-echo
 echo "📊 Final Results"
 echo "================"
 if [[ $main_result -eq 0 && $e2e_result -eq 0 ]]; then
