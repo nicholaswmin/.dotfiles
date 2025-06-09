@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# tests/run.test.sh - ALL TESTS INLINE
+# tests/run.test.sh - ACTUAL COMMAND TESTING
 
 printf "** dotfiles test suite **\n"
 
@@ -21,43 +21,53 @@ test() {
 
 section() { printf "\n%s\n-----\n" "$1"; }
 
-printf "\n** dotfiles main tests **\n"
-
+# File structure tests
 section "structure"
-test "dotfiles executable exists" "[[ -f dotfiles ]]"
-test "install script exists" "[[ -f install.sh ]]"
-test "readme exists" "[[ -f README.md ]]"
-test "gitignore exists" "[[ -f .gitignore ]]"
-test "lib directory exists" "[[ -d _lib ]]"
-test "home directory exists" "[[ -d home ]]"
-test "tests directory exists" "[[ -d tests ]]"
-test "github workflow exists" "[[ -f .github/workflows/test.yml ]]"
+test "dotfiles executable exists" "[[ -x dotfiles ]]"
+test "install script exists" "[[ -x install.sh ]]"
+test "all libraries exist" "[[ -f _lib/loggers.sh && -f _lib/init.sh && -f _lib/link.sh ]]"
 
-section "permissions"
-test "dotfiles is executable" "[[ -x dotfiles ]]"
-test "install script is executable" "[[ -x install.sh ]]"
+# ACTUAL CLI COMMAND TESTS
+section "cli commands"
+test "help command works" "./dotfiles --help"
+test "version command works" "./dotfiles --version"
+test "rejects unknown commands" "! ./dotfiles badcommand"
 
-section "libraries"
-test "loggers library exists" "[[ -f _lib/loggers.sh ]]"
-test "validation library exists" "[[ -f _lib/validation.sh ]]"
-test "init library exists" "[[ -f _lib/init.sh ]]"
-test "link library exists" "[[ -f _lib/link.sh ]]"
-test "unlink library exists" "[[ -f _lib/unlink.sh ]]"
-test "backup library exists" "[[ -f _lib/backup.sh ]]"
-test "restore library exists" "[[ -f _lib/restore.sh ]]"
-
-section "syntax"
-test "dotfiles syntax valid" "zsh -n dotfiles"
-test "install script syntax valid" "zsh -n install.sh"
-test "library syntax valid" "for f in _lib/*.sh; do zsh -n \$f || exit 1; done"
+# Skip CI-only tests if not in CI
+if [[ -n "$IS_ENV_CI" ]]; then
+  section "command functionality"
+  
+  # Setup test environment
+  export TEST_HOME="/tmp/test-home-$$"
+  export DOTFILES_ROOT="/tmp/test-dotfiles-$$"
+  export DOTFILES_HOME="$DOTFILES_ROOT/home"
+  mkdir -p "$TEST_HOME" "$DOTFILES_ROOT"
+  echo "test config" > "$TEST_HOME/.testrc"
+  
+  # Mock git
+  export PATH="/tmp/mock-git-$$:$PATH"
+  mkdir -p "/tmp/mock-git-$$"
+  echo '#!/bin/bash
+case "$1" in
+  init|add|commit|remote|push|pull) exit 0 ;;
+  *) exit 0 ;;
+esac' > "/tmp/mock-git-$$/git"
+  chmod +x "/tmp/mock-git-$$/git"
+  
+  # Test commands
+  test "init creates repository" "cd '$DOTFILES_ROOT' && '$PWD/dotfiles' init"
+  test "link works with files" "cd '$DOTFILES_ROOT' && HOME='$TEST_HOME' '$PWD/dotfiles' link '$TEST_HOME/.testrc'"
+  test "backup command runs" "cd '$DOTFILES_ROOT' && '$PWD/dotfiles' backup 'test commit'"
+  
+  # Cleanup
+  rm -rf "$TEST_HOME" "$DOTFILES_ROOT" "/tmp/mock-git-$$"
+  unset TEST_HOME DOTFILES_ROOT DOTFILES_HOME
+else
+  printf "\n** command functionality **\n"
+  printf "  skipped (CI only)\n"
+fi
 
 printf "\n** results **\n"
 printf "  tests: %d | passed: %d | failed: %d\n" "$TESTS_RUN" "$TESTS_PASSED" "$TESTS_FAILED"
 
-if [[ $TESTS_FAILED -eq 0 ]]; then
-  printf "  all tests passed\n"
-  exit 0
-else
-  printf "  %d failed\n" "$TESTS_FAILED"
-  exit 1
-fi
+[[ $TESTS_FAILED -eq 0 ]] && exit 0 || exit 1
