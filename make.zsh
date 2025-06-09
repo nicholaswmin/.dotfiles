@@ -1121,6 +1121,7 @@ run_test() {
 
 # Test 1: Basic file structure
 run_test "Generated file structure"
+ls -la
 if [[ -f "dotfiles" && -f "install.sh" && -f "README.md" && -d "_lib" && -d "home" && -d "tests" ]]; then
   test_pass "file structure"
 else
