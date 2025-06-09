@@ -1,18 +1,13 @@
 #!/usr/bin/env zsh
-# main.test.sh - Core functionality tests for dotfiles generator
+# main.test.sh - Core functionality tests for dotfiles generator with debug output
 
 readonly TEST_NAME="Dotfiles Generator Core Tests"
 readonly TEST_DIR="/tmp/dotfiles-test-$(date +%s)"
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Test counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
-
-# =============================================================================
-# Test Utilities
-# =============================================================================
 
 test_start() {
   local test_name="$1"
@@ -33,29 +28,27 @@ test_fail() {
   ((TESTS_FAILED++))
 }
 
-# =============================================================================
-# Setup and Cleanup
-# =============================================================================
-
 setup_test_environment() {
-  mkdir -p "$TEST_DIR"
-  cd "$TEST_DIR"
+  mkdir -p "$TEST_DIR" || {
+    echo "ERROR: Failed to create test directory: $TEST_DIR"
+    exit 1
+  }
   
-  # Copy the generator script (now called make.zsh)
+  cd "$TEST_DIR" || {
+    echo "ERROR: Failed to change to test directory"
+    exit 1
+  }
+  
   if [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
     cp "$SCRIPT_DIR/../make.zsh" . || {
       echo "ERROR: Failed to copy make.zsh"
       exit 1
     }
+    chmod +x make.zsh
   else
     echo "ERROR: Cannot find make.zsh in parent directory"
-    echo "Debug: Looking in: $SCRIPT_DIR/.."
-    echo "Debug: Available files:"
-    ls -la "$SCRIPT_DIR/.." || echo "Directory listing failed"
     exit 1
   fi
-  
-  chmod +x make.zsh
 }
 
 cleanup_test_environment() {
@@ -63,12 +56,9 @@ cleanup_test_environment() {
   rm -rf "$TEST_DIR"
 }
 
-# =============================================================================
-# Tests
-# =============================================================================
-
 test_generator_execution() {
   test_start "Generator execution"
+  
   if ./make.zsh &>/dev/null; then
     test_pass
   else
@@ -91,6 +81,7 @@ test_file_structure() {
   )
   
   local missing=()
+  
   for item in "${required[@]}"; do
     local path="${item%:*}"
     local type="${item#*:}"
@@ -155,10 +146,6 @@ test_github_workflow() {
     test_fail "GitHub workflow missing"
   fi
 }
-
-# =============================================================================
-# Main Execution
-# =============================================================================
 
 run_all_tests() {
   printf "\n=== %s ===\n\n" "$TEST_NAME"

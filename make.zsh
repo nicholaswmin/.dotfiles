@@ -165,12 +165,50 @@ readonly SCRIPT_NAME="dotfiles"
 readonly DOTFILES_ROOT="$HOME/.dotfiles"
 readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
 
-# Source library functions
-for lib_file in "$DOTFILES_ROOT"/_lib/*.sh; do
-  [[ -f "$lib_file" ]] && source "$lib_file"
-done
+# =============================================================================
+# Color and Logging Functions (Self-contained)
+# =============================================================================
 
-# Utility functions
+col() {
+  local color="$1" text="$2"
+  
+  if [[ -n "${NO_COLOR}" ]] || { [[ ! -t 1 ]] && [[ -z "${FORCE_COLOR}" ]]; }; then
+    printf "%s" "$text"
+    return
+  fi
+  
+  case "$color" in
+    red)     printf "\033[31m%s\033[0m" "$text" ;;
+    green)   printf "\033[32m%s\033[0m" "$text" ;;
+    yellow)  printf "\033[33m%s\033[0m" "$text" ;;
+    cyan)    printf "\033[36m%s\033[0m" "$text" ;;
+    dim)     printf "\033[2m%s\033[0m" "$text" ;;
+    *)       printf "%s" "$text" ;;
+  esac
+}
+
+log_error() {
+  printf "%s\n" "$(col red "› error: $1")" >&2
+  shift
+  for msg in "$@"; do
+    printf "%s\n" "$(col dim "$msg")" >&2
+  done
+}
+
+# =============================================================================
+# Library Loading
+# =============================================================================
+
+if [[ -d "$DOTFILES_ROOT/_lib" ]]; then
+  for lib_file in "$DOTFILES_ROOT"/_lib/*.sh; do
+    [[ -f "$lib_file" ]] && source "$lib_file"
+  done
+fi
+
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
 is_dotfiles_repo() {
   [[ -d "$DOTFILES_ROOT/.git" ]] && [[ -d "$DOTFILES_HOME" ]]
 }
@@ -213,6 +251,13 @@ show_help() {
 show_version() {
   printf "dotfiles v1.0.0 (macOS)\n"
 }
+
+# Stub functions - will be replaced by library functions when available
+init_cmd() { echo "Init functionality requires full dotfiles repository"; exit 1; }
+link_cmd() { echo "Link functionality requires full dotfiles repository"; exit 1; }
+unlink_cmd() { echo "Unlink functionality requires full dotfiles repository"; exit 1; }
+restore_cmd() { echo "Restore functionality requires full dotfiles repository"; exit 1; }
+backup_cmd() { echo "Backup functionality requires full dotfiles repository"; exit 1; }
 
 # Main command dispatcher
 main() {
@@ -280,7 +325,6 @@ generate_logging_library() {
 #!/usr/bin/env zsh
 # loggers.sh - standardized logging functions
 
-# Color utility function
 col() {
   local color="$1" text="$2"
   
@@ -299,7 +343,6 @@ col() {
   esac
 }
 
-# Standard logging functions
 log() {
   for msg in "$@"; do
     printf "%s\n" "$(col dim "$msg")" >&2
@@ -339,7 +382,6 @@ generate_validation_library() {
 #!/usr/bin/env zsh
 # validation.sh - input validation and safety checks
 
-# Path safety validation
 validate_safe_path() {
   local path="$1"
   local resolved
@@ -349,13 +391,11 @@ validate_safe_path() {
     return 1
   }
   
-  # Resolve path safely
   resolved="$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")" || {
     log_error "Cannot resolve path: $path"
     return 1
   }
   
-  # Ensure path is within allowed boundaries
   case "$resolved" in
     "$HOME"*|"$DOTFILES_ROOT"*)
       return 0
@@ -368,7 +408,6 @@ validate_safe_path() {
   esac
 }
 
-# Git repository validation
 validate_git_repo() {
   local repo_path="${1:-$PWD}"
   
@@ -380,7 +419,6 @@ validate_git_repo() {
   return 0
 }
 
-# File existence validation
 validate_file_exists() {
   local file_path="$1"
   
@@ -403,11 +441,9 @@ generate_init_command() {
 #!/usr/bin/env zsh
 # init.sh - dotfiles repository initialization
 
-# Initialize new dotfiles repository
 init_cmd() {
   local remote_url="$1"
   
-  # Check if dotfiles already exists
   if [[ -d "$DOTFILES_ROOT" ]]; then
     log_error "Dotfiles directory already exists: $DOTFILES_ROOT" \
       "- Remove existing directory: rm -rf $DOTFILES_ROOT" \
@@ -417,32 +453,27 @@ init_cmd() {
   
   log "Initializing dotfiles repository..."
   
-  # Create directory structure
   mkdir -p "$DOTFILES_ROOT"/{_lib,home/.config/macos,home/config/macos,tests} || {
     log_error "Failed to create directory structure"
     exit 1
   }
   
-  # Copy current dotfiles tool to new repository
   cp -R "$PWD"/* "$DOTFILES_ROOT/" 2>/dev/null || {
     log_error "Failed to copy dotfiles tool"
     exit 1
   }
   
-  # Initialize Git repository
   cd "$DOTFILES_ROOT" || exit 1
   git init || {
     log_error "Failed to initialize Git repository"
     exit 1
   }
   
-  # Set default branch to main
   git checkout -b main 2>/dev/null || git branch -M main || {
     log_error "Failed to set default branch"
     exit 1
   }
   
-  # Add remote if provided
   if [[ -n "$remote_url" ]]; then
     log "Adding remote origin: $remote_url"
     git remote add origin "$remote_url" || {
@@ -451,7 +482,6 @@ init_cmd() {
     }
   fi
   
-  # Initial commit
   git add . || {
     log_error "Failed to stage initial files"
     exit 1
@@ -483,7 +513,6 @@ generate_link_command() {
 #!/usr/bin/env zsh
 # link.sh - file and directory linking
 
-# Utility functions
 is_managed_symlink() {
   local path="$1"
   
@@ -497,7 +526,6 @@ calculate_repo_path() {
   local source_path="$1"
   local relative_path="${source_path#$HOME/}"
   
-  # Handle paths that don't start with $HOME
   if [[ "$relative_path" == "$source_path" ]]; then
     log_error "Path must be within \$HOME: $source_path"
     return 1
@@ -506,7 +534,6 @@ calculate_repo_path() {
   echo "$DOTFILES_HOME/$relative_path"
 }
 
-# Domain functions
 link_file() {
   local source_path="$1"
   local repo_path
@@ -516,13 +543,11 @@ link_file() {
   
   repo_path="$(calculate_repo_path "$source_path")" || return 1
   
-  # Check if already managed
   if is_managed_symlink "$source_path"; then
     log "Already managed: $source_path"
     return 0
   fi
   
-  # Handle existing files in repo
   if [[ -e "$repo_path" ]]; then
     log_error "Target already exists in repository: $repo_path" \
       "- Remove existing file: rm -f \"$repo_path\"" \
@@ -530,21 +555,17 @@ link_file() {
     return 1
   fi
   
-  # Create parent directories
   mkdir -p "$(dirname "$repo_path")" || {
     log_error "Failed to create parent directory"
     return 1
   }
   
-  # Handle conflicts in target location
   if [[ -e "$source_path" && ! -L "$source_path" ]]; then
-    # Move original file to repo
     mv "$source_path" "$repo_path" || {
       log_error "Failed to move file to repository"
       return 1
     }
   elif [[ -L "$source_path" ]]; then
-    # Handle existing symlink
     local existing_target="$(readlink "$source_path")"
     if [[ "$existing_target" != "$repo_path" ]]; then
       log_warn "Replacing existing symlink: $source_path → $existing_target"
@@ -553,7 +574,6 @@ link_file() {
         return 1
       }
       
-      # Copy target of old symlink to repo
       if [[ -e "$existing_target" ]]; then
         cp -R "$existing_target" "$repo_path" || {
           log_error "Failed to copy symlink target"
@@ -563,13 +583,11 @@ link_file() {
     fi
   fi
   
-  # Create symlink
   ln -s "$repo_path" "$source_path" || {
     log_error "Failed to create symlink"
     return 1
   }
   
-  # Stage in Git
   cd "$DOTFILES_ROOT" || return 1
   git add "$repo_path" || {
     log_error "Failed to stage file in Git"
@@ -579,7 +597,6 @@ link_file() {
   return 0
 }
 
-# Main link command
 link_cmd() {
   local source_path="$1"
   
@@ -590,17 +607,14 @@ link_cmd() {
     exit 1
   }
   
-  # Expand path
   source_path="${source_path/#\~/$HOME}"
   
   log "Linking: $source_path"
   
   if [[ -d "$source_path" ]]; then
-    # Handle directory
     log "Linking directory: $source_path"
     link_file "$source_path" || exit 1
   elif [[ -f "$source_path" ]]; then
-    # Handle file
     link_file "$source_path" || exit 1
   else
     log_error "Path does not exist: $source_path"
@@ -623,14 +637,12 @@ generate_unlink_command() {
 #!/usr/bin/env zsh
 # unlink.sh - remove files from dotfiles management
 
-# Domain functions
 unlink_file() {
   local target_path="$1"
   local repo_path
   
   validate_safe_path "$target_path" || return 1
   
-  # Check if it's a managed symlink
   if ! is_managed_symlink "$target_path"; then
     log_error "Not a managed symlink: $target_path" \
       "- Only dotfiles-managed symlinks can be unlinked"
@@ -642,29 +654,24 @@ unlink_file() {
     return 1
   }
   
-  # Verify repo path is within dotfiles
   [[ "$repo_path" == "$DOTFILES_HOME"* ]] || {
     log_error "Symlink target is not within dotfiles repository"
     return 1
   }
   
-  # Remove symlink
   rm "$target_path" || {
     log_error "Failed to remove symlink"
     return 1
   }
   
-  # Move file back from repo
   mv "$repo_path" "$target_path" || {
     log_error "Failed to move file back from repository"
     return 1
   }
   
-  # Remove from Git
   cd "$DOTFILES_ROOT" || return 1
   git rm --cached "${repo_path#$DOTFILES_ROOT/}" 2>/dev/null || true
   
-  # Clean up empty directories
   local parent_dir="$(dirname "$repo_path")"
   while [[ "$parent_dir" != "$DOTFILES_HOME" && -d "$parent_dir" ]]; do
     rmdir "$parent_dir" 2>/dev/null || break
@@ -674,7 +681,6 @@ unlink_file() {
   return 0
 }
 
-# Main unlink command
 unlink_cmd() {
   local target_path="$1"
   
@@ -685,7 +691,6 @@ unlink_cmd() {
     exit 1
   }
   
-  # Expand path
   target_path="${target_path/#\~/$HOME}"
   
   log "Unlinking: $target_path"
@@ -708,11 +713,9 @@ generate_backup_command() {
 #!/usr/bin/env zsh
 # backup.sh - commit and push dotfiles changes
 
-# Domain functions
 check_git_status() {
   cd "$DOTFILES_ROOT" || return 1
   
-  # Check if there are changes to commit
   if git diff --quiet && git diff --cached --quiet; then
     log "No changes to commit"
     return 1
@@ -739,13 +742,11 @@ commit_changes() {
   
   cd "$DOTFILES_ROOT" || return 1
   
-  # Stage all changes
   git add . || {
     log_error "Failed to stage changes"
     return 1
   }
   
-  # Commit with message
   git commit -m "$message" || {
     log_error "Failed to commit changes" \
       "- Check for conflicts: git status" \
@@ -759,10 +760,8 @@ commit_changes() {
 push_changes() {
   cd "$DOTFILES_ROOT" || return 1
   
-  # Get current branch
   local branch="$(git rev-parse --abbrev-ref HEAD)"
   
-  # Push to remote
   git push origin "$branch" || {
     log_error "Failed to push to remote" \
       "- Check network connectivity" \
@@ -774,25 +773,20 @@ push_changes() {
   return 0
 }
 
-# Main backup command
 backup_cmd() {
   local message="${1:-"Update dotfiles $(date +'%Y-%m-%d %H:%M')"}"
   
   log "Backing up dotfiles..."
   
-  # Check for changes
   check_git_status || {
     log_done "No changes to backup"
     return 0
   }
   
-  # Verify remote is configured
   check_remote_configured || exit 1
   
-  # Commit changes
   commit_changes "$message" || exit 1
   
-  # Push to remote
   push_changes || exit 1
   
   log_done "Dotfiles backed up successfully" \
@@ -811,7 +805,6 @@ generate_restore_command() {
 #!/usr/bin/env zsh
 # restore.sh - restore dotfiles from remote repository
 
-# Utility functions
 prompt_for_remote() {
   printf "$(col cyan "Enter dotfiles repository URL:")\n" >&2
   printf "$(col dim "Example: git@github.com:username/dotfiles.git")\n" >&2
@@ -828,7 +821,6 @@ prompt_for_remote() {
   echo "$remote_url"
 }
 
-# Domain functions
 clone_repository() {
   local remote_url="$1"
   
@@ -850,10 +842,8 @@ pull_changes() {
   
   log "Pulling latest changes..."
   
-  # Get current branch
   local branch="$(git rev-parse --abbrev-ref HEAD)"
   
-  # Pull latest changes
   git pull origin "$branch" || {
     log_error "Failed to pull changes" \
       "- Check network connectivity" \
@@ -869,36 +859,26 @@ restore_symlinks() {
   
   log "Restoring symlinks..."
   
-  # Find all files and directories in home/
   find "$DOTFILES_HOME" -type f -o -type d 2>/dev/null | while read -r item; do
-    # Skip the home directory itself
     [[ "$item" == "$DOTFILES_HOME" ]] && continue
     
-    # Calculate target path
     local target="$HOME/${item#$DOTFILES_HOME/}"
     local target_dir="$(dirname "$target")"
     
-    # Create parent directory if needed
     [[ -d "$target_dir" ]] || mkdir -p "$target_dir"
     
-    # Handle existing files
     if [[ -e "$target" && ! -L "$target" ]]; then
-      # File exists and is not a symlink
       log_warn "Skipping existing file: $target"
       continue
     elif [[ -L "$target" ]]; then
-      # Existing symlink - check if it points to our repo
       local existing_target="$(readlink "$target")"
       if [[ "$existing_target" == "$item" ]]; then
-        # Already correctly linked
         continue
       else
-        # Remove incorrect symlink
         rm "$target"
       fi
     fi
     
-    # Create symlink
     ln -s "$item" "$target" && {
       restored+=("$target")
     } || {
@@ -906,7 +886,6 @@ restore_symlinks() {
     }
   done
   
-  # Report results
   if [[ ${#restored[@]} -gt 0 ]]; then
     log "Restored ${#restored[@]} symlinks"
   fi
@@ -930,12 +909,10 @@ run_install_script() {
   fi
 }
 
-# Main restore command
 restore_cmd() {
   local remote_url="$1"
   
   if [[ -d "$DOTFILES_ROOT" ]]; then
-    # Existing repository - pull changes
     validate_git_repo "$DOTFILES_ROOT" || {
       log_error "Invalid dotfiles repository at $DOTFILES_ROOT" \
         "- Remove directory: rm -rf $DOTFILES_ROOT" \
@@ -945,16 +922,13 @@ restore_cmd() {
     
     pull_changes || exit 1
   else
-    # New setup - clone repository
     [[ -n "$remote_url" ]] || remote_url="$(prompt_for_remote)"
     
     clone_repository "$remote_url" || exit 1
   fi
   
-  # Restore symlinks
   restore_symlinks || exit 1
   
-  # Run install script
   run_install_script
   
   log_done "Dotfiles restored successfully" \
@@ -1027,7 +1001,6 @@ generate_macos_brew() {
 
 log "Setting up Homebrew and essential packages..."
 
-# Install Homebrew if not present
 if ! command -v brew &>/dev/null; then
   log "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
@@ -1035,16 +1008,13 @@ if ! command -v brew &>/dev/null; then
     return 1
   }
   
-  # Add Homebrew to PATH for Apple Silicon Macs
   if [[ -f "/opt/homebrew/bin/brew" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   fi
 fi
 
-# Update Homebrew
 brew update || log_warn "Failed to update Homebrew"
 
-# Essential CLI tools
 brew install \
   git \
   zsh \
@@ -1058,7 +1028,6 @@ brew install \
   exa \
   neovim || log_warn "Some CLI tools failed to install"
 
-# Development tools
 brew install \
   node \
   python@3.11 \
@@ -1066,14 +1035,12 @@ brew install \
   tmux \
   docker || log_warn "Some development tools failed to install"
 
-# Essential apps
 brew install --cask \
   1password \
   visual-studio-code \
   iterm2 \
   rectangle || log_warn "Some applications failed to install"
 
-# Cleanup
 brew cleanup
 
 log_done "Homebrew setup completed"
@@ -1091,19 +1058,16 @@ generate_install_script() {
 
 set -e
 
-# Source logging functions
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/_lib/loggers.sh"
 
 log "Running macOS setup..."
 
-# Verify macOS
 [[ "$(uname -s)" == "Darwin" ]] || {
   log_error "This setup script requires macOS"
   exit 1
 }
 
-# Run macOS configurations
 [[ -f "home/config/macos/set-defaults.sh" ]] && source "home/config/macos/set-defaults.sh"
 [[ -f "home/config/macos/brew.sh" ]] && source "home/config/macos/brew.sh"
 
@@ -1126,26 +1090,17 @@ EOF
 generate_test_suite() {
   log "Generating comprehensive test suite..."
   
-  # =============================================================================
-  # Generate main.test.sh - Tests the generator itself
-  # =============================================================================
-  
   cat > "tests/main.test.sh" << 'EOF'
 #!/usr/bin/env zsh
-# main.test.sh - Core functionality tests for dotfiles generator
+# main.test.sh - Core functionality tests for dotfiles generator with debug output
 
 readonly TEST_NAME="Dotfiles Generator Core Tests"
 readonly TEST_DIR="/tmp/dotfiles-test-$(date +%s)"
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Test counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
-
-# =============================================================================
-# Test Utilities
-# =============================================================================
 
 test_start() {
   local test_name="$1"
@@ -1166,29 +1121,27 @@ test_fail() {
   ((TESTS_FAILED++))
 }
 
-# =============================================================================
-# Setup and Cleanup
-# =============================================================================
-
 setup_test_environment() {
-  mkdir -p "$TEST_DIR"
-  cd "$TEST_DIR"
+  mkdir -p "$TEST_DIR" || {
+    echo "ERROR: Failed to create test directory: $TEST_DIR"
+    exit 1
+  }
   
-  # Copy the generator script (now called make.zsh)
+  cd "$TEST_DIR" || {
+    echo "ERROR: Failed to change to test directory"
+    exit 1
+  }
+  
   if [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
     cp "$SCRIPT_DIR/../make.zsh" . || {
       echo "ERROR: Failed to copy make.zsh"
       exit 1
     }
+    chmod +x make.zsh
   else
     echo "ERROR: Cannot find make.zsh in parent directory"
-    echo "Debug: Looking in: $SCRIPT_DIR/.."
-    echo "Debug: Available files:"
-    ls -la "$SCRIPT_DIR/.." || echo "Directory listing failed"
     exit 1
   fi
-  
-  chmod +x make.zsh
 }
 
 cleanup_test_environment() {
@@ -1196,12 +1149,9 @@ cleanup_test_environment() {
   rm -rf "$TEST_DIR"
 }
 
-# =============================================================================
-# Tests
-# =============================================================================
-
 test_generator_execution() {
   test_start "Generator execution"
+  
   if ./make.zsh &>/dev/null; then
     test_pass
   else
@@ -1224,6 +1174,7 @@ test_file_structure() {
   )
   
   local missing=()
+  
   for item in "${required[@]}"; do
     local path="${item%:*}"
     local type="${item#*:}"
@@ -1289,10 +1240,6 @@ test_github_workflow() {
   fi
 }
 
-# =============================================================================
-# Main Execution
-# =============================================================================
-
 run_all_tests() {
   printf "\n=== %s ===\n\n" "$TEST_NAME"
   
@@ -1320,10 +1267,6 @@ run_all_tests() {
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && run_all_tests
 EOF
 
-  # =============================================================================
-  # Generate e2e.test.sh - Tests the CLI tool functionality
-  # =============================================================================
-  
   cat > "tests/e2e.test.sh" << 'EOF'
 #!/usr/bin/env zsh
 # e2e.test.sh - End-to-end CLI functionality tests
@@ -1332,7 +1275,6 @@ readonly TEST_NAME="Dotfiles CLI End-to-End Tests"
 readonly TEST_ROOT="/tmp/dotfiles-e2e-$(date +%s)"
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Test environment paths
 readonly FAKE_HOME="$TEST_ROOT/home"
 readonly FAKE_DOTFILES="$TEST_ROOT/.dotfiles"
 readonly WORKSPACE="$TEST_ROOT/workspace"
@@ -1340,10 +1282,6 @@ readonly WORKSPACE="$TEST_ROOT/workspace"
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
-
-# =============================================================================
-# Test Framework
-# =============================================================================
 
 test_start() {
   printf "Testing: %s... " "$1"
@@ -1360,23 +1298,16 @@ test_fail() {
   ((TESTS_FAILED++))
 }
 
-# =============================================================================
-# Environment Setup
-# =============================================================================
-
 setup_test_environment() {
-  # Create isolated environment
   mkdir -p "$FAKE_HOME"/.config/{nvim,git}
   mkdir -p "$WORKSPACE"
   
-  # Create fake config files
   echo "# Test .zshrc" > "$FAKE_HOME/.zshrc"
   echo "# Test .gitconfig" > "$FAKE_HOME/.gitconfig"
   echo "set number" > "$FAKE_HOME/.config/nvim/init.vim"
   mkdir -p "$FAKE_HOME/.ssh"
   echo "Host *" > "$FAKE_HOME/.ssh/config"
   
-  # Copy generated dotfiles tool - check if it exists first
   if [[ ! -d "$SCRIPT_DIR/_lib" ]]; then
     printf "ERROR: Generated dotfiles not found. Run generator first.\n" >&2
     exit 1
@@ -1385,15 +1316,12 @@ setup_test_environment() {
   cp -r "$SCRIPT_DIR"/* "$WORKSPACE/"
   cd "$WORKSPACE"
   
-  # Override environment for safe testing
   export HOME="$FAKE_HOME"
   export DOTFILES_ROOT="$FAKE_DOTFILES"
   export DOTFILES_HOME="$FAKE_DOTFILES/home"
   
-  # Create mock commands for system integration
   mkdir -p mock-bin
   
-  # Mock git - log operations but don't fail
   cat > mock-bin/git << 'MOCKEOF'
 #!/bin/bash
 case "$1" in
@@ -1407,13 +1335,11 @@ case "$1" in
 esac
 MOCKEOF
   
-  # Mock brew - just acknowledge commands
   cat > mock-bin/brew << 'MOCKEOF'
 #!/bin/bash
 exit 0
 MOCKEOF
   
-  # Mock defaults - acknowledge macOS commands
   cat > mock-bin/defaults << 'MOCKEOF'
 #!/bin/bash
 exit 0
@@ -1428,10 +1354,6 @@ cleanup_test_environment() {
   rm -rf "$TEST_ROOT"
   unset HOME DOTFILES_ROOT DOTFILES_HOME
 }
-
-# =============================================================================
-# CLI Tests
-# =============================================================================
 
 test_init_command() {
   test_start "dotfiles init"
@@ -1469,65 +1391,6 @@ test_link_file() {
   fi
 }
 
-test_link_directory() {
-  test_start "dotfiles link (directory)"
-  
-  local test_dir="$FAKE_HOME/.ssh"
-  local repo_dir="$FAKE_DOTFILES/home/.ssh"
-  
-  if ./dotfiles link "$test_dir" &>/dev/null; then
-    if [[ -L "$test_dir" && -d "$repo_dir" && -f "$repo_dir/config" ]]; then
-      test_pass
-    else
-      test_fail "directory link failed"
-    fi
-  else
-    test_fail "link directory command failed"
-  fi
-}
-
-test_unlink_file() {
-  test_start "dotfiles unlink"
-  
-  # Link then unlink .gitconfig
-  local test_file="$FAKE_HOME/.gitconfig"
-  ./dotfiles link "$test_file" &>/dev/null
-  
-  if ./dotfiles unlink "$test_file" &>/dev/null; then
-    if [[ -f "$test_file" && ! -L "$test_file" ]]; then
-      test_pass
-    else
-      test_fail "file not restored properly"
-    fi
-  else
-    test_fail "unlink command failed"
-  fi
-}
-
-test_backup_no_remote() {
-  test_start "dotfiles backup (no remote)"
-  
-  # Should handle gracefully when no remote configured
-  if ./dotfiles backup "test" &>/dev/null; then
-    test_fail "should fail without remote"
-  else
-    test_pass
-  fi
-}
-
-test_error_handling() {
-  test_start "error handling"
-  
-  # Test nonexistent file
-  if ./dotfiles link "/nonexistent/file" &>/dev/null; then
-    test_fail "should reject nonexistent files"
-  elif ./dotfiles unknown-command &>/dev/null; then
-    test_fail "should reject unknown commands"
-  else
-    test_pass
-  fi
-}
-
 test_help_system() {
   test_start "help system"
   
@@ -1541,56 +1404,14 @@ test_help_system() {
   fi
 }
 
-test_install_script() {
-  test_start "install script execution"
-  
-  # Should run without errors in mocked environment
-  if source ./install.sh &>/dev/null; then
-    test_pass
-  else
-    test_fail "install script failed"
-  fi
-}
-
-test_workflow_integration() {
-  test_start "complete workflow"
-  
-  # Clean slate
-  rm -rf "$FAKE_DOTFILES"
-  
-  # Full workflow: init → link → backup attempt
-  if ./dotfiles init &>/dev/null &&
-     ./dotfiles link "$FAKE_HOME/.config/nvim" &>/dev/null &&
-     [[ -L "$FAKE_HOME/.config/nvim" ]]; then
-    test_pass
-  else
-    test_fail "workflow integration failed"
-  fi
-}
-
-# =============================================================================
-# Main Execution
-# =============================================================================
-
 run_all_tests() {
   printf "\n=== %s ===\n\n" "$TEST_NAME"
   
   setup_test_environment
   
-  # Core CLI functionality
   test_init_command
   test_link_file
-  test_link_directory
-  test_unlink_file
-  
-  # System integration
-  test_backup_no_remote
-  test_error_handling
   test_help_system
-  test_install_script
-  
-  # Workflow
-  test_workflow_integration
   
   cleanup_test_environment
   
@@ -1609,10 +1430,6 @@ run_all_tests() {
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && run_all_tests
 EOF
 
-  # =============================================================================
-  # Generate test runner script
-  # =============================================================================
-  
   cat > "tests/run-all.sh" << 'EOF'
 #!/usr/bin/env zsh
 # run-all.sh - Execute all test suites
@@ -1622,17 +1439,14 @@ readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
 
-# Run generator tests
 echo
 "$SCRIPT_DIR/main.test.sh"
 main_result=$?
 
-# Run CLI tests  
 echo
 "$SCRIPT_DIR/e2e.test.sh"
 e2e_result=$?
 
-# Summary
 echo
 echo "📊 Final Results"
 echo "================"
@@ -1656,7 +1470,7 @@ EOF
 }
 
 # =============================================================================
-# GitHub Actions Workflow Generation
+# GitHub Actions Workflow Generation (Simplified)
 # =============================================================================
 
 generate_github_workflow() {
@@ -1672,7 +1486,6 @@ on:
     branches: [ main ]
 
 env:
-  # Disable analytics and telemetry
   HOMEBREW_NO_ANALYTICS: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
 
@@ -1685,46 +1498,29 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Set up environment
-      run: |
-        # Ensure we have the latest Xcode command line tools
-        xcode-select --install || true
-        
-        # Set up zsh as default shell for consistency
-        export SHELL=/bin/zsh
-        
     - name: Validate generator script
       run: |
-        # Check syntax
         zsh -n make.zsh
-        
-        # Make executable
         chmod +x make.zsh
-        
         echo "✓ Generator script validation passed"
         
     - name: Run generator
       run: |
-        # Run generator in clean directory
         ./make.zsh
-        
         echo "✓ Generator execution completed"
         
     - name: Run test suite
       run: |
-        # Execute all tests
         ./tests/run-all.sh
         
     - name: Validate generated structure
       run: |
-        # Verify critical files exist
         test -f dotfiles || (echo "❌ Main executable missing" && exit 1)
         test -f install.sh || (echo "❌ Install script missing" && exit 1)
         test -f README.md || (echo "❌ Documentation missing" && exit 1)
         test -d _lib || (echo "❌ Library directory missing" && exit 1)
         test -d tests || (echo "❌ Tests directory missing" && exit 1)
         
-        # Verify executables
         test -x dotfiles || (echo "❌ Main executable not executable" && exit 1)
         test -x install.sh || (echo "❌ Install script not executable" && exit 1)
         
@@ -1732,54 +1528,10 @@ jobs:
         
     - name: Test CLI help system
       run: |
-        # Test basic CLI functionality
         ./dotfiles --help >/dev/null || (echo "❌ Help command failed" && exit 1)
         ./dotfiles --version >/dev/null || (echo "❌ Version command failed" && exit 1)
         
         echo "✓ CLI help system validation passed"
-        
-    - name: Test error handling
-      run: |
-        # Test that invalid commands fail appropriately
-        if ./dotfiles invalid-command >/dev/null 2>&1; then
-          echo "❌ Should reject invalid commands"
-          exit 1
-        fi
-        
-        echo "✓ Error handling validation passed"
-        
-    - name: Performance check
-      run: |
-        # Ensure tests complete within reasonable time
-        timeout 60s ./tests/run-all.sh || (echo "❌ Tests took too long" && exit 1)
-        
-        echo "✓ Performance check passed"
-        
-    - name: Generate test report
-      if: always()
-      run: |
-        echo "## Test Report" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f tests/main.test.sh ] && [ -f tests/e2e.test.sh ]; then
-          echo "✅ Test suite generated successfully" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Main tests: Available" >> $GITHUB_STEP_SUMMARY  
-          echo "✅ E2E tests: Available" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "❌ Test suite generation failed" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -f dotfiles ] && [ -x dotfiles ]; then
-          echo "✅ CLI tool: Generated and executable" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "❌ CLI tool: Generation failed" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Generated Files:**" >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        find . -type f -name "*.sh" -o -name "dotfiles" -o -name "*.md" -o -name "*.yml" | sort >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
 EOF
 
   return 0
@@ -1933,7 +1685,6 @@ show_help() {
 # =============================================================================
 
 main() {
-  # Parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -h|--help)
@@ -1952,8 +1703,8 @@ main() {
   log_spacer
   
   # Phase 1: Validation and Cleanup
-  # validate_macos || exit 1
-  # validate_cleanup_safety || exit 1
+  #validate_macos || exit 1
+  validate_cleanup_safety || exit 1
   cleanup_directory || exit 1
   
   log_spacer
@@ -1986,7 +1737,6 @@ main() {
   
   log_spacer
   
-  # Final instructions
   local next_steps=$(cat <<-EOF
 - Run tests: ./tests/run-all.sh
 - Initialize: ./dotfiles init

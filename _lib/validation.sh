@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # validation.sh - input validation and safety checks
 
-# Path safety validation
 validate_safe_path() {
   local path="$1"
   local resolved
@@ -11,13 +10,11 @@ validate_safe_path() {
     return 1
   }
   
-  # Resolve path safely
   resolved="$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")" || {
     log_error "Cannot resolve path: $path"
     return 1
   }
   
-  # Ensure path is within allowed boundaries
   case "$resolved" in
     "$HOME"*|"$DOTFILES_ROOT"*)
       return 0
@@ -30,7 +27,6 @@ validate_safe_path() {
   esac
 }
 
-# Git repository validation
 validate_git_repo() {
   local repo_path="${1:-$PWD}"
   
@@ -42,7 +38,6 @@ validate_git_repo() {
   return 0
 }
 
-# File existence validation
 validate_file_exists() {
   local file_path="$1"
   

@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # link.sh - file and directory linking
 
-# Utility functions
 is_managed_symlink() {
   local path="$1"
   
@@ -15,7 +14,6 @@ calculate_repo_path() {
   local source_path="$1"
   local relative_path="${source_path#$HOME/}"
   
-  # Handle paths that don't start with $HOME
   if [[ "$relative_path" == "$source_path" ]]; then
     log_error "Path must be within \$HOME: $source_path"
     return 1
@@ -24,7 +22,6 @@ calculate_repo_path() {
   echo "$DOTFILES_HOME/$relative_path"
 }
 
-# Domain functions
 link_file() {
   local source_path="$1"
   local repo_path
@@ -34,13 +31,11 @@ link_file() {
   
   repo_path="$(calculate_repo_path "$source_path")" || return 1
   
-  # Check if already managed
   if is_managed_symlink "$source_path"; then
     log "Already managed: $source_path"
     return 0
   fi
   
-  # Handle existing files in repo
   if [[ -e "$repo_path" ]]; then
     log_error "Target already exists in repository: $repo_path" \
       "- Remove existing file: rm -f \"$repo_path\"" \
@@ -48,21 +43,17 @@ link_file() {
     return 1
   fi
   
-  # Create parent directories
   mkdir -p "$(dirname "$repo_path")" || {
     log_error "Failed to create parent directory"
     return 1
   }
   
-  # Handle conflicts in target location
   if [[ -e "$source_path" && ! -L "$source_path" ]]; then
-    # Move original file to repo
     mv "$source_path" "$repo_path" || {
       log_error "Failed to move file to repository"
       return 1
     }
   elif [[ -L "$source_path" ]]; then
-    # Handle existing symlink
     local existing_target="$(readlink "$source_path")"
     if [[ "$existing_target" != "$repo_path" ]]; then
       log_warn "Replacing existing symlink: $source_path → $existing_target"
@@ -71,7 +62,6 @@ link_file() {
         return 1
       }
       
-      # Copy target of old symlink to repo
       if [[ -e "$existing_target" ]]; then
         cp -R "$existing_target" "$repo_path" || {
           log_error "Failed to copy symlink target"
@@ -81,13 +71,11 @@ link_file() {
     fi
   fi
   
-  # Create symlink
   ln -s "$repo_path" "$source_path" || {
     log_error "Failed to create symlink"
     return 1
   }
   
-  # Stage in Git
   cd "$DOTFILES_ROOT" || return 1
   git add "$repo_path" || {
     log_error "Failed to stage file in Git"
@@ -97,7 +85,6 @@ link_file() {
   return 0
 }
 
-# Main link command
 link_cmd() {
   local source_path="$1"
   
@@ -108,17 +95,14 @@ link_cmd() {
     exit 1
   }
   
-  # Expand path
   source_path="${source_path/#\~/$HOME}"
   
   log "Linking: $source_path"
   
   if [[ -d "$source_path" ]]; then
-    # Handle directory
     log "Linking directory: $source_path"
     link_file "$source_path" || exit 1
   elif [[ -f "$source_path" ]]; then
-    # Handle file
     link_file "$source_path" || exit 1
   else
     log_error "Path does not exist: $source_path"

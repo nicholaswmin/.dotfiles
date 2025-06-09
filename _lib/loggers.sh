@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # loggers.sh - standardized logging functions
 
-# Color utility function
 col() {
   local color="$1" text="$2"
   
@@ -20,7 +19,6 @@ col() {
   esac
 }
 
-# Standard logging functions
 log() {
   for msg in "$@"; do
     printf "%s\n" "$(col dim "$msg")" >&2

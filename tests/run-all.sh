@@ -6,17 +6,14 @@ readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
 
-# Run generator tests
 echo
 "$SCRIPT_DIR/main.test.sh"
 main_result=$?
 
-# Run CLI tests  
 echo
 "$SCRIPT_DIR/e2e.test.sh"
 e2e_result=$?
 
-# Summary
 echo
 echo "📊 Final Results"
 echo "================"

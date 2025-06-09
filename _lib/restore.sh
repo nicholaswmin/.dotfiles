@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # restore.sh - restore dotfiles from remote repository
 
-# Utility functions
 prompt_for_remote() {
   printf "$(col cyan "Enter dotfiles repository URL:")\n" >&2
   printf "$(col dim "Example: git@github.com:username/dotfiles.git")\n" >&2
@@ -18,7 +17,6 @@ prompt_for_remote() {
   echo "$remote_url"
 }
 
-# Domain functions
 clone_repository() {
   local remote_url="$1"
   
@@ -40,10 +38,8 @@ pull_changes() {
   
   log "Pulling latest changes..."
   
-  # Get current branch
   local branch="$(git rev-parse --abbrev-ref HEAD)"
   
-  # Pull latest changes
   git pull origin "$branch" || {
     log_error "Failed to pull changes" \
       "- Check network connectivity" \
@@ -59,36 +55,26 @@ restore_symlinks() {
   
   log "Restoring symlinks..."
   
-  # Find all files and directories in home/
   find "$DOTFILES_HOME" -type f -o -type d 2>/dev/null | while read -r item; do
-    # Skip the home directory itself
     [[ "$item" == "$DOTFILES_HOME" ]] && continue
     
-    # Calculate target path
     local target="$HOME/${item#$DOTFILES_HOME/}"
     local target_dir="$(dirname "$target")"
     
-    # Create parent directory if needed
     [[ -d "$target_dir" ]] || mkdir -p "$target_dir"
     
-    # Handle existing files
     if [[ -e "$target" && ! -L "$target" ]]; then
-      # File exists and is not a symlink
       log_warn "Skipping existing file: $target"
       continue
     elif [[ -L "$target" ]]; then
-      # Existing symlink - check if it points to our repo
       local existing_target="$(readlink "$target")"
       if [[ "$existing_target" == "$item" ]]; then
-        # Already correctly linked
         continue
       else
-        # Remove incorrect symlink
         rm "$target"
       fi
     fi
     
-    # Create symlink
     ln -s "$item" "$target" && {
       restored+=("$target")
     } || {
@@ -96,7 +82,6 @@ restore_symlinks() {
     }
   done
   
-  # Report results
   if [[ ${#restored[@]} -gt 0 ]]; then
     log "Restored ${#restored[@]} symlinks"
   fi
@@ -120,12 +105,10 @@ run_install_script() {
   fi
 }
 
-# Main restore command
 restore_cmd() {
   local remote_url="$1"
   
   if [[ -d "$DOTFILES_ROOT" ]]; then
-    # Existing repository - pull changes
     validate_git_repo "$DOTFILES_ROOT" || {
       log_error "Invalid dotfiles repository at $DOTFILES_ROOT" \
         "- Remove directory: rm -rf $DOTFILES_ROOT" \
@@ -135,16 +118,13 @@ restore_cmd() {
     
     pull_changes || exit 1
   else
-    # New setup - clone repository
     [[ -n "$remote_url" ]] || remote_url="$(prompt_for_remote)"
     
     clone_repository "$remote_url" || exit 1
   fi
   
-  # Restore symlinks
   restore_symlinks || exit 1
   
-  # Run install script
   run_install_script
   
   log_done "Dotfiles restored successfully" \

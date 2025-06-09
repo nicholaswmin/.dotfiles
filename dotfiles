@@ -7,12 +7,50 @@ readonly SCRIPT_NAME="dotfiles"
 readonly DOTFILES_ROOT="$HOME/.dotfiles"
 readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
 
-# Source library functions
-for lib_file in "$DOTFILES_ROOT"/_lib/*.sh; do
-  [[ -f "$lib_file" ]] && source "$lib_file"
-done
+# =============================================================================
+# Color and Logging Functions (Self-contained)
+# =============================================================================
 
-# Utility functions
+col() {
+  local color="$1" text="$2"
+  
+  if [[ -n "${NO_COLOR}" ]] || { [[ ! -t 1 ]] && [[ -z "${FORCE_COLOR}" ]]; }; then
+    printf "%s" "$text"
+    return
+  fi
+  
+  case "$color" in
+    red)     printf "\033[31m%s\033[0m" "$text" ;;
+    green)   printf "\033[32m%s\033[0m" "$text" ;;
+    yellow)  printf "\033[33m%s\033[0m" "$text" ;;
+    cyan)    printf "\033[36m%s\033[0m" "$text" ;;
+    dim)     printf "\033[2m%s\033[0m" "$text" ;;
+    *)       printf "%s" "$text" ;;
+  esac
+}
+
+log_error() {
+  printf "%s\n" "$(col red "› error: $1")" >&2
+  shift
+  for msg in "$@"; do
+    printf "%s\n" "$(col dim "$msg")" >&2
+  done
+}
+
+# =============================================================================
+# Library Loading
+# =============================================================================
+
+if [[ -d "$DOTFILES_ROOT/_lib" ]]; then
+  for lib_file in "$DOTFILES_ROOT"/_lib/*.sh; do
+    [[ -f "$lib_file" ]] && source "$lib_file"
+  done
+fi
+
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
 is_dotfiles_repo() {
   [[ -d "$DOTFILES_ROOT/.git" ]] && [[ -d "$DOTFILES_HOME" ]]
 }
@@ -55,6 +93,13 @@ show_help() {
 show_version() {
   printf "dotfiles v1.0.0 (macOS)\n"
 }
+
+# Stub functions - will be replaced by library functions when available
+init_cmd() { echo "Init functionality requires full dotfiles repository"; exit 1; }
+link_cmd() { echo "Link functionality requires full dotfiles repository"; exit 1; }
+unlink_cmd() { echo "Unlink functionality requires full dotfiles repository"; exit 1; }
+restore_cmd() { echo "Restore functionality requires full dotfiles repository"; exit 1; }
+backup_cmd() { echo "Backup functionality requires full dotfiles repository"; exit 1; }
 
 # Main command dispatcher
 main() {
