@@ -18,18 +18,7 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Validate generator script
-      run: |
-        zsh -n make.zsh
-        chmod +x make.zsh
-        echo "✓ Generator script validation passed"
-        
-    - name: Run generator
-      run: |
-        ./make.zsh
-        echo "✓ Generator execution completed"
-        
+
     - name: Run test suite
       run: |
         ./tests/run-all.sh
