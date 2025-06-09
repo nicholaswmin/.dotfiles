@@ -79,7 +79,5 @@ backup_cmd() {
   commit_changes "$message" || exit 1
   
   push_changes || exit 1
-  
-  log_done "Dotfiles backed up successfully" \
-    "- Committed: $message" \
-    "- Pushed to remote repository"
+
+  log_done "Dotfiles successfully pushed to remote"
