@@ -30,6 +30,7 @@ jobs:
 
       - name: Visualise project file structure
         run: |
+          brew install tree
           echo "** directory structure **"
           tree -L 2 -p
           echo
