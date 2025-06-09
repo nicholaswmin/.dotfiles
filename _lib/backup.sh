@@ -83,6 +83,7 @@ backup_cmd() {
   log_done "Dotfiles backed up successfully" \
     "- Committed: $message" \
     "- Pushed to remote repository"
+<<<<<<< HEAD
 }#!/usr/bin/env zsh
 # backup.sh - commit and push dotfiles changes
 
@@ -168,4 +169,6 @@ backup_cmd() {
   log_done "Dotfiles backed up successfully" \
     "- Committed: $message" \
     "- Pushed to remote repository"
+=======
+>>>>>>> 7322a53 (fix: add validation for git repository in backup command to ensure proper execution)
 }
