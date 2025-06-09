@@ -1,10 +1,7 @@
 #!/usr/bin/env zsh
-echo "=== TESTING IN CI ==="
-# Override the library path to current directory
-export DOTFILES_ROOT="$PWD"
-export DOTFILES_HOME="$PWD/home"
-
-./dotfiles --help
-./dotfiles --version
-./dotfiles init
-echo "=== DONE ==="
+echo "PWD: $PWD"
+echo "Starting link test..."
+mkdir -p /tmp/testfile
+echo "test" > /tmp/testfile/.test
+./dotfiles link /tmp/testfile/.test
+echo "Link finished"
