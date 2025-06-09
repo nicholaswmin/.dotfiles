@@ -1,8 +1,6 @@
-# macOS Dotfiles Management
+# .dotfiles
 
-Streamlined dotfiles management system optimized for macOS.
-
-## Quick Start
+## quickstart
 
 ```bash
 # Initialize repository
@@ -28,7 +26,7 @@ dotfiles backup "Initial setup"
 
 ```
 ~/.dotfiles/
-├── dotfiles              # Main CLI executable
+├── dotfiles             # Main CLI executable
 ├── install.sh           # macOS system setup
 ├── home/                # Mirror of $HOME structure
 │   └── .config/         # Application configurations
@@ -52,12 +50,16 @@ dotfiles backup "Initial setup"
 
 ```bash
 # Run all tests
-./tests/run-all.sh
+./tests/run.test.sh
 
 # Run individual test suites
 ./tests/main.test.sh    # Generator tests
 ./tests/e2e.test.sh     # CLI tests
 ```
+
+> **note:** CLI/E2E tests only run on CI 
+> to avoid mangling your user files.   
+> CI is an `arm64` running `macOS`.
 
 ## macOS Integration
 
