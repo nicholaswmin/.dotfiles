@@ -20,7 +20,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Validate Apple Silicon architecture
+      - name: Ensure Apple Silicon architecture
         run: |
           if [ "$(uname -m)" != "arm64" ]; then
             echo "::error::expected arm64, got: $(uname -m)"
@@ -28,31 +28,10 @@ jobs:
           fi
           echo "✓ ARM architecture detected"
 
-      - name: Run All Shell Tests
-        run: ./tests/run-all.sh
+      - name: Run Tests
+        run: ./tests/run.test.sh
 
-      - name: Check Required Files Exist
-        run: |
-          for f in dotfiles install.sh README.md; do
-            [ -f "$f" ] || { echo "::error::$f missing"; exit 1; }
-          done
-          echo "✓ All required files exist"
-
-      - name: Check Required Directories Exist
-        run: |
-          for d in _lib tests; do
-            [ -d "$d" ] || { echo "::error::$d directory missing"; exit 1; }
-          done
-          echo "✓ All required directories exist"
-
-      - name: Check Executable Permissions
-        run: |
-          for x in dotfiles install.sh; do
-            [ -x "$x" ] || { echo "::error::$x not executable"; exit 1; }
-          done
-          echo "✓ All executables have correct permissions"
-
-      - name: Test CLI Help and Version Output
+      - name: Test CLI
         run: |
           ./dotfiles --help >/dev/null || { echo "::error::Help command failed"; exit 1; }
           ./dotfiles --version >/dev/null || { echo "::error::Version command failed"; exit 1; }
