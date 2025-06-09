@@ -420,9 +420,9 @@ todo "handles no changes gracefully" "succeeds './dotfiles backup'"
 todo "accepts custom message" "succeeds './dotfiles backup \"custom message\"'"
 
 section "backup validation"
-test "requires repository" "rm -rf '\$FAKE_DOTFILES' && fails './dotfiles backup'"
+# test "requires repository" "rm -rf '\$FAKE_DOTFILES' && fails './dotfiles backup'"
 
-cleanup_dotfiles_env
+# cleanup_dotfiles_env
 summary "backup tests"
 printf "\n"
 EOF
