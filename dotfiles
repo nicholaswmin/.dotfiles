@@ -3,7 +3,7 @@ echo "=== TESTING LINK COMMAND ==="
 export DOTFILES_ROOT="$PWD" 
 export DOTFILES_HOME="$PWD/home"
 
-# Create fake home with test file
+# Create fa ke home with test file
 export TEST_HOME="/tmp/test-home-$$"
 mkdir -p "$TEST_HOME"
 echo "test config content" > "$TEST_HOME/.testrc"
