@@ -1,99 +1,31 @@
 #!/usr/bin/env zsh
-# dotfiles - macOS dotfiles management CLI
+echo "=== TESTING LINK COMMAND ==="
+export DOTFILES_ROOT="$PWD" 
+export DOTFILES_HOME="$PWD/home"
 
-readonly SCRIPT_NAME="dotfiles"
-readonly DOTFILES_ROOT="$HOME/.dotfiles"
-readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
+# Create fake home with test file
+export TEST_HOME="/tmp/test-home-$$"
+mkdir -p "$TEST_HOME"
+echo "test config content" > "$TEST_HOME/.testrc"
 
-# Source all libraries
-for lib_file in "$(dirname "$0")"/_lib/*.sh; do
-  source "$lib_file"
-done
+echo "=== TEST 1: Link existing file ==="
+echo "Before link:"
+echo "Test file exists: $(test -f "$TEST_HOME/.testrc" && echo "YES" || echo "NO")"
 
-is_dotfiles_repo() {
-  [[ -d "$DOTFILES_ROOT/.git" ]] && [[ -d "$DOTFILES_HOME" ]]
-}
+HOME="$TEST_HOME" ./dotfiles link "$TEST_HOME/.testrc"
 
-require_repo() {
-  is_dotfiles_repo || {
-    log_error "Not in a dotfiles repository" \
-      "- Initialize with: dotfiles init" \
-      "- Clone existing: dotfiles init <remote_url>"
-    exit 1
-  }
-}
+echo "After link:"
+echo "Test file is symlink: $(test -L "$TEST_HOME/.testrc" && echo "YES" || echo "NO")"
+echo "Repo file exists: $(test -f "$PWD/home/.testrc" && echo "YES" || echo "NO")"
 
-show_help() {
-  printf "\n"
-  printf " $(col cyan "⚙️  dotfiles")\n"
-  printf "   $(col yellow "macOS dotfiles management")\n"
-  printf "\n"
-  printf " $(col cyan "usage:")\n"
-  printf " $(col dim "  dotfiles <command> [options]")\n"
-  printf "\n"
-  printf " $(col cyan "commands:")\n"
-  printf " $(col dim "  init [remote]               # initialize dotfiles repo")\n"
-  printf " $(col dim "  link <path>                 # link file or directory")\n"
-  printf " $(col dim "  unlink <path>               # unlink file or directory")\n"
-  printf " $(col dim "  restore                     # restore from remote")\n"
-  printf " $(col dim "  backup [message]            # commit and push changes")\n"
-  printf "\n"
-  printf " $(col dim "  -h, --help                  # show this help")\n"
-  printf " $(col dim "  -v, --version               # show version")\n"
-  printf "\n"
-  printf " $(col cyan "examples:")\n"
-  printf " $(col dim "  dotfiles init")\n"
-  printf " $(col dim "  dotfiles link ~/.zshrc")\n"
-  printf " $(col dim "  dotfiles link ~/.config/nvim")\n"
-  printf " $(col dim "  dotfiles backup \"Update configs\"")\n"
-  printf "\n"
-}
+echo "=== TEST 2: Link non-existent file ==="
+echo "Testing non-existent file:"
+HOME="$TEST_HOME" ./dotfiles link "$TEST_HOME/.nonexistent"
 
-show_version() {
-  printf "dotfiles v1.0.0 (macOS)\n"
-}
+echo "=== TEST 3: Link with no arguments ==="
+echo "Testing no arguments:"
+HOME="$TEST_HOME" ./dotfiles link
 
-main() {
-  case "$1" in
-    init)
-      shift
-      init_cmd "$@"
-      ;;
-    link)
-      shift
-      require_repo
-      link_cmd "$@"
-      ;;
-    unlink)
-      shift
-      require_repo
-      unlink_cmd "$@"
-      ;;
-    restore)
-      shift
-      restore_cmd "$@"
-      ;;
-    backup)
-      shift
-      require_repo
-      backup_cmd "$@"
-      ;;
-    -h|--help)
-      show_help
-      ;;
-    -v|--version)
-      show_version
-      ;;
-    "")
-      show_help
-      exit 1
-      ;;
-    *)
-      log_error "Unknown command: $1" \
-        "- Run 'dotfiles --help' for available commands"
-      exit 1
-      ;;
-  esac
-}
-
-main "$@"
+# Cleanup
+rm -rf "$TEST_HOME"
+echo "=== DONE ==="
