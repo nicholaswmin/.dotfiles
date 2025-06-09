@@ -32,3 +32,4 @@ test "install script syntax valid" "succeeds 'zsh -n install.sh'"
 test "library syntax valid" "succeeds 'for f in _lib/*.sh; do zsh -n \$f || exit 1; done'"
 
 summary "main tests"
+printf "\n"
