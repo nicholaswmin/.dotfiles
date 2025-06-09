@@ -1,23 +1,40 @@
-#!/bin/bash
-echo "=== Dotfiles Generator Core Tests ==="
+#!/usr/bin/env zsh
+# tests/main.test.sh - structure tests (safe to run locally)
 
-echo "Checking if dotfiles exists..."
-[ -f "dotfiles" ] || { echo "dotfiles missing"; exit 1; }
+source "$(dirname "$0")/util/runner.zsh"
 
-echo "Checking if install.sh exists..."
-[ -f "install.sh" ] || { echo "install.sh missing"; exit 1; }
+run_main_tests() {
+  printf "\n** dotfiles main tests **\n"
+  
+  section "structure"
+  test "dotfiles executable exists" "file dotfiles"
+  test "install script exists" "file install.sh"
+  test "readme exists" "file README.md"
+  test "gitignore exists" "file .gitignore"
+  test "lib directory exists" "dir _lib"
+  test "home directory exists" "dir home"
+  test "tests directory exists" "dir tests"
+  test "github workflow exists" "file .github/workflows/test.yml"
+  
+  section "permissions"
+  test "dotfiles is executable" "executable dotfiles"
+  test "install script is executable" "executable install.sh"
+  
+  section "libraries"
+  test "loggers library exists" "file _lib/loggers.sh"
+  test "validation library exists" "file _lib/validation.sh"
+  test "init library exists" "file _lib/init.sh"
+  test "link library exists" "file _lib/link.sh"
+  test "unlink library exists" "file _lib/unlink.sh"
+  test "backup library exists" "file _lib/backup.sh"
+  test "restore library exists" "file _lib/restore.sh"
+  
+  section "syntax"
+  test "dotfiles syntax valid" "succeeds 'zsh -n dotfiles'"
+  test "install script syntax valid" "succeeds 'zsh -n install.sh'"
+  test "library syntax valid" "succeeds 'for f in _lib/*.sh; do zsh -n \$f || exit 1; done'"
+  
+  summary "main tests"
+}
 
-echo "Checking if README.md exists..."
-[ -f "README.md" ] || { echo "README.md missing"; exit 1; }
-
-echo "Checking if _lib directory exists..."
-[ -d "_lib" ] || { echo "_lib directory missing"; exit 1; }
-
-echo "Checking if home directory exists..."
-[ -d "home" ] || { echo "home directory missing"; exit 1; }
-
-echo "Checking if tests directory exists..."
-[ -d "tests" ] || { echo "tests directory missing"; exit 1; }
-
-echo "✓ All tests passed!"
-exit 0
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && run_main_tests
