@@ -1,3 +1,5 @@
+[![test](https://github.com/nicholaswmin/.dotfiles/actions/workflows/test.yml/badge.svg)](https://github.com/nicholaswmin/.dotfiles/actions/workflows/test.yml)
+
 # .dotfiles
 
 ## quickstart
@@ -57,9 +59,9 @@ dotfiles backup "Initial setup"
 ./tests/e2e.test.sh     # CLI tests
 ```
 
-> **note:** CLI/E2E tests only run on CI 
-> to avoid mangling your user files.   
-> CI is an `arm64` running `macOS`.
+> **note:** E2E tests only run on [CI](#CI/CD).   
+> They are auto-skipped when testing locally.     
+> This is intentional, to avoid mangling your user files.  
 
 ## macOS Integration
 
@@ -69,8 +71,8 @@ dotfiles backup "Initial setup"
 
 ## CI/CD
 
-Includes GitHub Actions workflow for automated testing on macOS runners.
-Tests run on every push and pull request to `main` branch.
+CI is running on `arm64` macOS runners,    
+on every push and pull request to `main` branch.
 
 ## License
 
