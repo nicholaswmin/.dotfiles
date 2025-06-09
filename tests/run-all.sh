@@ -1,19 +1,19 @@
-#!/usr/bin/env zsh
-# run-all.sh - Execute all test suites
+#!/bin/bash
+# run-all.sh - Execute all test suites - BULLETPROOF
 
-readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+set -e
 
 echo "🧪 Running Dotfiles Test Suite"
 echo "================================"
-
 echo
-echo "Running generator tests..."
-"$SCRIPT_DIR/main.test.sh"
+
+echo "▶ Running generator tests..."
+bash tests/main.test.sh
 main_result=$?
 
 echo
-echo "Running CLI tests..."
-"$SCRIPT_DIR/e2e.test.sh"
+echo "▶ Running CLI tests..."
+bash tests/e2e.test.sh
 e2e_result=$?
 
 echo
