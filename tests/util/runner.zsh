@@ -1,43 +1,26 @@
 #!/usr/bin/env zsh
-# tests/util/runner.zsh - simple test framework
+# Test framework
+TESTS_RUN=0; TESTS_PASSED=0; TESTS_FAILED=0
 
-# Test state
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-# Core functions
 test() {
-  local name="$1"
-  local command="$2"
-  
-  printf "  %s" "$name"
-  ((TESTS_RUN++))
-  
-  if eval "$command" &>/dev/null; then
-    printf " ✓\n"
-    ((TESTS_PASSED++))
-    return 0
+  printf "  %s" "$1"; ((TESTS_RUN++))
+  if eval "$2" &>/dev/null; then
+    printf " ✓\n"; ((TESTS_PASSED++)); return 0
   else
-    printf " ✗\n"
-    ((TESTS_FAILED++))
-    return 1
+    printf " ✗\n"; ((TESTS_FAILED++)); return 1
   fi
 }
 
 section() { printf "\n** %s **\n" "$1"; }
-
 summary() {
-  local suite="$1"
-  printf "\n** %s results **\n" "$suite"
+  printf "\n** %s results **\n" "$1"
   printf "  tests: %d | passed: %d | failed: %d\n" "$TESTS_RUN" "$TESTS_PASSED" "$TESTS_FAILED"
   [[ $TESTS_FAILED -eq 0 && $TESTS_RUN -gt 0 ]] && printf "  ✓ all passed\n" || printf "  ✗ %d failed\n" "$TESTS_FAILED"
   [[ $TESTS_FAILED -eq 0 ]]
 }
-
 reset() { TESTS_RUN=0; TESTS_PASSED=0; TESTS_FAILED=0; }
 
-# Test helpers
+# Helpers
 file() { [[ -f "$1" ]]; }
 dir() { [[ -d "$1" ]]; }
 executable() { [[ -x "$1" ]]; }
@@ -46,17 +29,12 @@ contains() { [[ "$(eval "$1" 2>/dev/null)" == *"$2"* ]]; }
 succeeds() { eval "$1" &>/dev/null; }
 fails() { ! eval "$1" &>/dev/null; }
 
-# CI detection
 ci_only() {
   if [[ -z "$IS_ENV_CI" ]]; then
-    printf "\n** %s **\n" "$1"
-    printf "  skipped (CI only)\n"
-    return 1
-  fi
-  return 0
+    printf "\n** %s **\n" "$1"; printf "  skipped (CI only)\n"; return 1
+  fi; return 0
 }
 
-# Test environment setup
 setup_test_env() {
   export TEST_ROOT="/tmp/dotfiles-test-$(date +%s)"
   export FAKE_HOME="$TEST_ROOT/home"
@@ -71,11 +49,8 @@ setup_test_env() {
   cp -r "$(pwd)"/* "$TEST_ROOT/workspace/" 2>/dev/null || true
   cd "$TEST_ROOT/workspace"
   
-  export HOME="$FAKE_HOME"
-  export DOTFILES_ROOT="$FAKE_DOTFILES"
-  export DOTFILES_HOME="$FAKE_DOTFILES/home"
+  export HOME="$FAKE_HOME" DOTFILES_ROOT="$FAKE_DOTFILES" DOTFILES_HOME="$FAKE_DOTFILES/home"
   
-  # Mock git
   mkdir -p mock-bin
   cat > mock-bin/git << 'MOCKEOF'
 #!/bin/bash
@@ -91,7 +66,6 @@ MOCKEOF
 }
 
 cleanup_test_env() {
-  cd /
-  rm -rf "$TEST_ROOT"
+  cd /; rm -rf "$TEST_ROOT"
   unset HOME DOTFILES_ROOT DOTFILES_HOME TEST_ROOT FAKE_HOME FAKE_DOTFILES
 }
