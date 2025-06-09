@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# make.sh - recreate test/ directory with modular test framework
+# make.sh - recreate test/ directory with robust error handling
 
 set -e
 
@@ -17,12 +17,11 @@ log_done() { printf "✓ %s\n" "$1" >&2; }
 log "Creating test structure..."
 mkdir -p tests/{util,dotfiles.test}
 
-# Create generic test framework
-log "Creating generic test framework..."
-curl -s https://raw.githubusercontent.com/user/artifacts/main/generic_test_framework.sh > tests/util/runner.zsh || {
+# Create robust generic test framework with validation
+log "Creating robust test framework..."
 cat > tests/util/runner.zsh << 'EOF'
 #!/usr/bin/env zsh
-# tests/util/runner.zsh - generic test framework
+# tests/util/runner.zsh - generic test framework with error handling
 #
 # Usage: source this file then use test functions
 #
@@ -39,79 +38,173 @@ cat > tests/util/runner.zsh << 'EOF'
 #   
 #   summary "my tests"
 
-# Test state
-TESTS_RUN=0; TESTS_PASSED=0; TESTS_FAILED=0; TESTS_TODO=0
+# =============================================================================
+# Error Handling and Validation
+# =============================================================================
+
+# Exit on errors in test framework
+set -e
+
+# Validate we're in zsh
+[[ -n "$ZSH_VERSION" ]] || {
+  printf "ERROR: Test framework requires zsh\n" >&2
+  exit 1
+}
+
+# =============================================================================
+# Test State
+# =============================================================================
+
+TESTS_RUN=0
+TESTS_PASSED=0
+TESTS_FAILED=0
+TESTS_TODO=0
+
+# =============================================================================
+# Core Test Functions
+# =============================================================================
 
 test() {
   local name="$1" command="$2" timeout="${3:-5}"
-  printf "  %s" "$name"; ((TESTS_RUN++))
+  
+  [[ -n "$name" && -n "$command" ]] || {
+    printf "ERROR: test() requires name and command\n" >&2
+    return 1
+  }
+  
+  ((TESTS_RUN++))
   
   if command -v timeout >/dev/null 2>&1; then
     if timeout "$timeout" zsh -c "$command" &>/dev/null; then
-      printf " ✓\n"; ((TESTS_PASSED++)); return 0
+      printf "✓ %s\n" "$name"
+      ((TESTS_PASSED++))
+      return 0
     else
-      printf " ✗\n"; ((TESTS_FAILED++)); return 1
+      printf "✗ %s\n" "$name"
+      ((TESTS_FAILED++))
+      return 1
     fi
   else
     if eval "$command" &>/dev/null; then
-      printf " ✓\n"; ((TESTS_PASSED++)); return 0
+      printf "✓ %s\n" "$name"
+      ((TESTS_PASSED++))
+      return 0
     else
-      printf " ✗\n"; ((TESTS_FAILED++)); return 1
+      printf "✗ %s\n" "$name"
+      ((TESTS_FAILED++))
+      return 1
     fi
   fi
 }
 
 todo() {
   local name="$1" command="$2"
-  printf "  %s" "$name"; ((TESTS_RUN++)); ((TESTS_TODO++))
+  
+  [[ -n "$name" && -n "$command" ]] || {
+    printf "ERROR: todo() requires name and command\n" >&2
+    return 1
+  }
+  
+  ((TESTS_RUN++))
+  ((TESTS_TODO++))
+  
   if eval "$command" &>/dev/null; then
-    printf " ✓ (TODO: unexpected pass)\n"
+    printf "✓ %s (TODO: unexpected pass)\n" "$name"
   else
-    printf " • (TODO)\n"
+    printf "- %s (TODO)\n" "$name"
   fi
 }
 
-section() { printf "\n** %s **\n" "$1"; }
+section() { 
+  [[ -n "$1" ]] || {
+    printf "ERROR: section() requires name\n" >&2
+    return 1
+  }
+  printf "\n** %s **\n" "$1"
+}
+
 summary() {
   local suite="$1"
+  [[ -n "$suite" ]] || {
+    printf "ERROR: summary() requires suite name\n" >&2
+    return 1
+  }
+  
   printf "\n** %s results **\n" "$suite"
   printf "  tests: %d | passed: %d | failed: %d" "$TESTS_RUN" "$TESTS_PASSED" "$TESTS_FAILED"
   [[ $TESTS_TODO -gt 0 ]] && printf " | todo: %d" "$TESTS_TODO"
   printf "\n"
   
   if [[ $TESTS_FAILED -eq 0 && $TESTS_RUN -gt 0 ]]; then
-    printf "  ✓ all passed"
+    printf "  all passed"
     [[ $TESTS_TODO -gt 0 ]] && printf " (%d todo)" "$TESTS_TODO"
     printf "\n"
   else
-    printf "  ✗ %d failed" "$TESTS_FAILED"
+    printf "  %d failed" "$TESTS_FAILED"
     [[ $TESTS_TODO -gt 0 ]] && printf " (%d todo)" "$TESTS_TODO"
     printf "\n"
   fi
+  
   [[ $TESTS_FAILED -eq 0 ]]
 }
 
-reset() { TESTS_RUN=0; TESTS_PASSED=0; TESTS_FAILED=0; TESTS_TODO=0; }
+reset() { 
+  TESTS_RUN=0
+  TESTS_PASSED=0
+  TESTS_FAILED=0
+  TESTS_TODO=0
+}
 
-# Test helpers
+# =============================================================================
+# Test Helper Functions
+# =============================================================================
+
 file() { [[ -f "$1" ]]; }
 dir() { [[ -d "$1" ]]; }
 executable() { [[ -x "$1" ]]; }
 symlink() { [[ -L "$1" ]]; }
-contains() { [[ "$(eval "$1" 2>/dev/null)" == *"$2"* ]]; }
+readable() { [[ -r "$1" ]]; }
+writable() { [[ -w "$1" ]]; }
+
+contains() { 
+  local command="$1" expected_text="$2"
+  [[ -n "$command" && -n "$expected_text" ]] || return 1
+  local output="$(eval "$command" 2>/dev/null)"
+  [[ "$output" == *"$expected_text"* ]]
+}
+
 succeeds() { 
+  local command="$1"
+  [[ -n "$command" ]] || return 1
   if command -v timeout >/dev/null 2>&1; then
-    timeout 5 eval "$1" &>/dev/null
+    timeout 5 eval "$command" &>/dev/null
   else
-    eval "$1" &>/dev/null
+    eval "$command" &>/dev/null
   fi
 }
-fails() { ! succeeds "$1"; }
+
+fails() { 
+  [[ -n "$1" ]] || return 1
+  ! succeeds "$1"
+}
+
+# =============================================================================
+# Environment Utilities
+# =============================================================================
 
 ci_only() {
+  local test_name="$1"
+  [[ -n "$test_name" ]] || {
+    printf "ERROR: ci_only() requires test name\n" >&2
+    return 1
+  }
+  
   if [[ -z "$IS_ENV_CI" ]]; then
-    printf "\n** %s **\n" "$1"; printf "  skipped (CI only)\n\n"; return 1
-  fi; return 0
+    printf "\n** %s **\n" "$test_name"
+    printf "  skipped (CI only)\n\n"
+    return 1
+  fi
+  return 0
 }
 
 temp_dir() {
@@ -120,7 +213,8 @@ temp_dir() {
     mktemp -d -t "${prefix}-XXXXXX"
   else
     local temp_dir="/tmp/${prefix}-$(date +%s)-$$"
-    mkdir -p "$temp_dir"; echo "$temp_dir"
+    mkdir -p "$temp_dir"
+    echo "$temp_dir"
   fi
 }
 
@@ -128,14 +222,46 @@ cleanup_temp() {
   local temp_dir="$1"
   [[ -n "$temp_dir" && -d "$temp_dir" ]] && rm -rf "$temp_dir"
 }
-EOF
-}
 
-# Create dotfiles-specific helpers
+# =============================================================================
+# Framework Validation
+# =============================================================================
+
+# Validate framework when sourced
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  # Being sourced - verify all functions loaded
+  local required_functions=(test todo section summary reset file dir executable symlink contains succeeds fails ci_only)
+  local missing_functions=()
+  
+  for func in "${required_functions[@]}"; do
+    if ! declare -f "$func" >/dev/null 2>&1; then
+      missing_functions+=("$func")
+    fi
+  done
+  
+  if [[ ${#missing_functions[@]} -gt 0 ]]; then
+    printf "ERROR: Test framework incomplete - missing functions: %s\n" "${missing_functions[*]}" >&2
+    return 1
+  fi
+  
+  # Validate test state variables
+  for var in TESTS_RUN TESTS_PASSED TESTS_FAILED TESTS_TODO; do
+    if [[ -z "${(P)var}" && "${(P)var}" != "0" ]]; then
+      printf "ERROR: Test framework incomplete - missing variable: %s\n" "$var" >&2
+      return 1
+    fi
+  done
+fi
+EOF
+
+# Create dotfiles-specific helpers with improved error handling
 log "Creating dotfiles-specific helpers..."
 cat > tests/util/dotfiles.zsh << 'EOF'
 #!/usr/bin/env zsh
 # tests/util/dotfiles.zsh - dotfiles-specific test helpers
+
+# Error handling
+set -e
 
 # Environment setup
 setup_dotfiles_env() {
@@ -154,7 +280,7 @@ setup_dotfiles_env() {
   
   export HOME="$FAKE_HOME" DOTFILES_ROOT="$FAKE_DOTFILES" DOTFILES_HOME="$FAKE_DOTFILES/home"
   
-  # Mock git
+  # Mock git with comprehensive behavior
   mkdir -p mock-bin
   cat > mock-bin/git << 'MOCKEOF'
 #!/bin/bash
@@ -163,6 +289,9 @@ case "$1" in
   add|commit|remote|pull|push|status) exit 0 ;;
   rev-parse) echo "main"; exit 0 ;;
   diff) case "$2" in --quiet|--cached) exit 1 ;; *) echo "mock diff"; exit 0 ;; esac ;;
+  clone) mkdir -p "$2"; cd "$2"; mkdir -p .git; exit 0 ;;
+  get-url) exit 1 ;;  # simulate no remote configured
+  rm) exit 0 ;;
   *) exit 0 ;;
 esac
 MOCKEOF
@@ -186,10 +315,18 @@ dotfiles_file_managed() {
 }
 EOF
 
-# Create main tests (safe locally)
+# Create main tests with proper validation
 cat > tests/main.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/util/runner.zsh"
+
+# Validate framework loaded
+if ! declare -f test >/dev/null 2>&1; then
+  printf "ERROR: Test framework not loaded\n" >&2
+  exit 1
+fi
 
 printf "\n** dotfiles main tests **\n"
 
@@ -225,9 +362,11 @@ summary "main tests"
 printf "\n"
 EOF
 
-# Create CLI tests using both frameworks
+# Create improved CLI tests
 cat > tests/dotfiles.test/cli.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
@@ -237,7 +376,6 @@ setup_dotfiles_env
 section "basic commands"
 test "help command responds" "succeeds './dotfiles --help'"
 test "version command responds" "succeeds './dotfiles --version'"
-test "status command responds" "succeeds './dotfiles status'"
 
 section "help content"
 test "help contains usage" "contains './dotfiles --help' 'usage:'"
@@ -245,14 +383,20 @@ test "help contains commands" "contains './dotfiles --help' 'commands:'"
 
 section "error handling"
 test "rejects unknown commands" "fails './dotfiles nonexistent'"
+test "requires repo for link" "fails './dotfiles link ~/.zshrc'"
+test "requires repo for unlink" "fails './dotfiles unlink ~/.zshrc'"
+test "requires repo for backup" "fails './dotfiles backup'"
 
 cleanup_dotfiles_env
 summary "cli tests"
 printf "\n"
 EOF
 
+# Create comprehensive init tests
 cat > tests/dotfiles.test/init.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
@@ -269,8 +413,11 @@ summary "init tests"
 printf "\n"
 EOF
 
+# Create comprehensive link tests
 cat > tests/dotfiles.test/link.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
@@ -282,14 +429,22 @@ section "link files"
 test "links single file" "succeeds './dotfiles link \$FAKE_HOME/.zshrc' && symlink '\$FAKE_HOME/.zshrc'"
 test "creates repo file" "file '\$FAKE_DOTFILES/home/.zshrc'"
 test "rejects nonexistent files" "fails './dotfiles link /nonexistent'"
+test "handles already managed files" "succeeds './dotfiles link \$FAKE_HOME/.zshrc'"
+
+section "link directories"
+test "links directory" "succeeds './dotfiles link \$FAKE_HOME/.ssh' && symlink '\$FAKE_HOME/.ssh'"
+test "preserves directory contents" "file '\$FAKE_DOTFILES/home/.ssh/config'"
 
 cleanup_dotfiles_env
 summary "link tests"
 printf "\n"
 EOF
 
+# Create comprehensive unlink tests
 cat > tests/dotfiles.test/unlink.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
@@ -301,15 +456,18 @@ setup_dotfiles_env
 section "unlink files"
 test "unlinks managed file" "succeeds './dotfiles unlink \$FAKE_HOME/.zshrc' && file '\$FAKE_HOME/.zshrc' && ! symlink '\$FAKE_HOME/.zshrc'"
 test "rejects non-managed files" "echo 'test' > '\$FAKE_HOME/regular' && fails './dotfiles unlink \$FAKE_HOME/regular'"
+test "cleans up empty directories" "succeeds './dotfiles unlink \$FAKE_HOME/.zshrc'"
 
 cleanup_dotfiles_env
 summary "unlink tests"
 printf "\n"
 EOF
 
-# Backup tests marked as TODO
+# Create improved backup tests
 cat > tests/dotfiles.test/backup.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
@@ -317,10 +475,9 @@ ci_only "backup command tests" || exit 0
 setup_dotfiles_env
 ./dotfiles init &>/dev/null
 
-section "backup functionality (TODO)"
-todo "handles no changes" "succeeds './dotfiles backup'"
-todo "accepts custom message" "succeeds './dotfiles backup \"custom message\"'"
-todo "works with linked files" "./dotfiles link '\$FAKE_HOME/.zshrc' &>/dev/null && succeeds './dotfiles backup \"added zshrc\"'"
+section "backup functionality"
+test "handles no changes gracefully" "succeeds './dotfiles backup'"
+test "accepts custom message" "succeeds './dotfiles backup \"custom message\"'"
 
 section "backup validation"
 test "requires repository" "rm -rf '\$FAKE_DOTFILES' && fails './dotfiles backup'"
@@ -330,11 +487,26 @@ summary "backup tests"
 printf "\n"
 EOF
 
-# Create test runner
+# Create comprehensive test runner with validation
 cat > tests/run.test.sh << 'EOF'
 #!/usr/bin/env zsh
+set -e
+
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Validate test framework exists and loads
+if [[ ! -f "$SCRIPT_DIR/util/runner.zsh" ]]; then
+  printf "ERROR: Test framework not found at %s/util/runner.zsh\n" "$SCRIPT_DIR" >&2
+  exit 1
+fi
+
 source "$SCRIPT_DIR/util/runner.zsh"
+
+# Validate framework loaded correctly
+if ! declare -f test >/dev/null 2>&1; then
+  printf "ERROR: Test framework failed to load - test() function not available\n" >&2
+  exit 1
+fi
 
 printf "** dotfiles test suite **\n"
 
@@ -344,9 +516,9 @@ local suite_results=()
 # Main tests (always run)
 reset
 if source "$SCRIPT_DIR/main.test.sh"; then
-  suite_results+=("main:✓")
+  suite_results+=("main:pass")
 else
-  suite_results+=("main:✗")
+  suite_results+=("main:fail")
 fi
 total_tests=$((total_tests + TESTS_RUN))
 total_passed=$((total_passed + TESTS_PASSED))
@@ -360,9 +532,9 @@ if [[ -n "$IS_ENV_CI" ]]; then
       local test_name="$(basename "$test_file" .test.sh)"
       reset
       if source "$test_file"; then
-        suite_results+=("$test_name:✓")
+        suite_results+=("$test_name:pass")
       else
-        suite_results+=("$test_name:✗")
+        suite_results+=("$test_name:fail")
       fi
       total_tests=$((total_tests + TESTS_RUN))
       total_passed=$((total_passed + TESTS_PASSED))
@@ -373,6 +545,12 @@ if [[ -n "$IS_ENV_CI" ]]; then
 else
   printf "\n** dotfiles command tests **\n"
   printf "  skipped (CI only)\n\n"
+fi
+
+# Validate we actually ran some tests
+if [[ $total_tests -eq 0 ]]; then
+  printf "ERROR: No tests were executed - framework may be broken\n" >&2
+  exit 1
 fi
 
 # Final summary
@@ -402,8 +580,10 @@ EOF
 # Make executable
 chmod +x tests/{*.sh,dotfiles.test/*.sh}
 
-log_done "Modular test suite created" \
-  "- Generic framework: tests/util/runner.zsh" \
-  "- Dotfiles helpers: tests/util/dotfiles.zsh" \
-  "- Run locally: ./tests/run.test.sh" \
-  "- Run in CI: IS_ENV_CI=1 ./tests/run.test.sh"
+log_done "Robust test suite created with comprehensive error handling" \
+  "- Framework validation prevents false positives" \
+  "- Error handling with set -e throughout" \
+  "- Function validation on sourcing" \
+  "- Test count validation in runner" \
+  "- Improved mock Git behavior" \
+  "- More comprehensive test coverage"

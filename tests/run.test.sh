@@ -1,6 +1,21 @@
 #!/usr/bin/env zsh
+set -e
+
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Validate test framework exists and loads
+if [[ ! -f "$SCRIPT_DIR/util/runner.zsh" ]]; then
+  printf "ERROR: Test framework not found at %s/util/runner.zsh\n" "$SCRIPT_DIR" >&2
+  exit 1
+fi
+
 source "$SCRIPT_DIR/util/runner.zsh"
+
+# Validate framework loaded correctly
+if ! declare -f test >/dev/null 2>&1; then
+  printf "ERROR: Test framework failed to load - test() function not available\n" >&2
+  exit 1
+fi
 
 printf "** dotfiles test suite **\n"
 
@@ -10,9 +25,9 @@ local suite_results=()
 # Main tests (always run)
 reset
 if source "$SCRIPT_DIR/main.test.sh"; then
-  suite_results+=("main:✓")
+  suite_results+=("main:pass")
 else
-  suite_results+=("main:✗")
+  suite_results+=("main:fail")
 fi
 total_tests=$((total_tests + TESTS_RUN))
 total_passed=$((total_passed + TESTS_PASSED))
@@ -26,9 +41,9 @@ if [[ -n "$IS_ENV_CI" ]]; then
       local test_name="$(basename "$test_file" .test.sh)"
       reset
       if source "$test_file"; then
-        suite_results+=("$test_name:✓")
+        suite_results+=("$test_name:pass")
       else
-        suite_results+=("$test_name:✗")
+        suite_results+=("$test_name:fail")
       fi
       total_tests=$((total_tests + TESTS_RUN))
       total_passed=$((total_passed + TESTS_PASSED))
@@ -39,6 +54,12 @@ if [[ -n "$IS_ENV_CI" ]]; then
 else
   printf "\n** dotfiles command tests **\n"
   printf "  skipped (CI only)\n\n"
+fi
+
+# Validate we actually ran some tests
+if [[ $total_tests -eq 0 ]]; then
+  printf "ERROR: No tests were executed - framework may be broken\n" >&2
+  exit 1
 fi
 
 # Final summary

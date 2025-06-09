@@ -1,5 +1,13 @@
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/util/runner.zsh"
+
+# Validate framework loaded
+if ! declare -f test >/dev/null 2>&1; then
+  printf "ERROR: Test framework not loaded\n" >&2
+  exit 1
+fi
 
 printf "\n** dotfiles main tests **\n"
 

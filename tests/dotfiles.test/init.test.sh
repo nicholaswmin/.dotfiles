@@ -1,4 +1,6 @@
 #!/usr/bin/env zsh
+set -e
+
 source "$(dirname "$0")/../util/runner.zsh"
 source "$(dirname "$0")/../util/dotfiles.zsh"
 
