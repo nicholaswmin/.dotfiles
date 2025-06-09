@@ -40,7 +40,7 @@ setup_test_env() {
 
   ./dotfiles init || { printf "ERROR: 'dotfiles init' command failed\n"; exit 1; }
   
-  echo "test content for real home" > "~/.testrc"
+  printf "test content for real home\n" > "~/.testrc"
 }
 
 printf "** dotfiles test suite **\n"
