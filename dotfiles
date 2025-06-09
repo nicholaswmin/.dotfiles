@@ -1,31 +1,22 @@
 #!/usr/bin/env zsh
-echo "=== TESTING LINK COMMAND ==="
-export DOTFILES_ROOT="$PWD" 
-export DOTFILES_HOME="$PWD/home"
+# dotfiles - macOS dotfiles management CLI
 
-# Create fa ke home with test file
-export TEST_HOME="/tmp/test-home-$$"
-mkdir -p "$TEST_HOME"
-echo "test config content" > "$TEST_HOME/.testrc"
+readonly DOTFILES_ROOT="$HOME/.dotfiles"
+readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
 
-echo "=== TEST 1: Link existing file ==="
-echo "Before link:"
-echo "Test file exists: $(test -f "$TEST_HOME/.testrc" && echo "YES" || echo "NO")"
+# Source libraries
+source "$(dirname "$0")/_lib/loggers.sh"
+source "$(dirname "$0")/_lib/init.sh"
+source "$(dirname "$0")/_lib/link.sh"
 
-HOME="$TEST_HOME" ./dotfiles link "$TEST_HOME/.testrc"
+main() {
+  case "$1" in
+    init) init_cmd "$@" ;;
+    link) link_cmd "$@" ;;
+    --help) show_help ;;
+    --version) show_version ;;
+    *) echo "Unknown command: $1"; exit 1 ;;
+  esac
+}
 
-echo "After link:"
-echo "Test file is symlink: $(test -L "$TEST_HOME/.testrc" && echo "YES" || echo "NO")"
-echo "Repo file exists: $(test -f "$PWD/home/.testrc" && echo "YES" || echo "NO")"
-
-echo "=== TEST 2: Link non-existent file ==="
-echo "Testing non-existent file:"
-HOME="$TEST_HOME" ./dotfiles link "$TEST_HOME/.nonexistent"
-
-echo "=== TEST 3: Link with no arguments ==="
-echo "Testing no arguments:"
-HOME="$TEST_HOME" ./dotfiles link
-
-# Cleanup
-rm -rf "$TEST_HOME"
-echo "=== DONE ==="
+main "$@" 
