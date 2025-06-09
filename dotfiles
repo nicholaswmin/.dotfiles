@@ -1,0 +1,103 @@
+#!/usr/bin/env zsh
+# dotfiles - macOS dotfiles management CLI
+# usage: dotfiles <command> [options]
+
+# Configuration
+readonly SCRIPT_NAME="dotfiles"
+readonly DOTFILES_ROOT="$HOME/.dotfiles"
+readonly DOTFILES_HOME="$DOTFILES_ROOT/home"
+
+# Source library functions
+for lib_file in "$DOTFILES_ROOT"/_lib/*.sh; do
+  [[ -f "$lib_file" ]] && source "$lib_file"
+done
+
+# Utility functions
+is_dotfiles_repo() {
+  [[ -d "$DOTFILES_ROOT/.git" ]] && [[ -d "$DOTFILES_HOME" ]]
+}
+
+require_repo() {
+  is_dotfiles_repo || {
+    log_error "Not in a dotfiles repository" \
+      "- Initialize with: dotfiles init" \
+      "- Clone existing: dotfiles init <remote_url>"
+    exit 1
+  }
+}
+
+show_help() {
+  printf "\n"
+  printf " $(col cyan "⚙️  dotfiles")\n"
+  printf "   $(col yellow "macOS dotfiles management")\n"
+  printf "\n"
+  printf " $(col cyan "usage:")\n"
+  printf " $(col dim "  dotfiles <command> [options]")\n"
+  printf "\n"
+  printf " $(col cyan "commands:")\n"
+  printf " $(col dim "  init [remote]               # initialize dotfiles repo")\n"
+  printf " $(col dim "  link <path>                 # link file or directory")\n"
+  printf " $(col dim "  unlink <path>               # unlink file or directory")\n"
+  printf " $(col dim "  restore                     # restore from remote")\n"
+  printf " $(col dim "  backup [message]            # commit and push changes")\n"
+  printf "\n"
+  printf " $(col dim "  -h, --help                  # show this help")\n"
+  printf " $(col dim "  -v, --version               # show version")\n"
+  printf "\n"
+  printf " $(col cyan "examples:")\n"
+  printf " $(col dim "  dotfiles init")\n"
+  printf " $(col dim "  dotfiles link ~/.zshrc")\n"
+  printf " $(col dim "  dotfiles link ~/.config/nvim")\n"
+  printf " $(col dim "  dotfiles backup \"Update configs\"")\n"
+  printf "\n"
+}
+
+show_version() {
+  printf "dotfiles v1.0.0 (macOS)\n"
+}
+
+# Main command dispatcher
+main() {
+  case "$1" in
+    init)
+      shift
+      init_cmd "$@"
+      ;;
+    link)
+      shift
+      require_repo
+      link_cmd "$@"
+      ;;
+    unlink)
+      shift
+      require_repo
+      unlink_cmd "$@"
+      ;;
+    restore)
+      shift
+      restore_cmd "$@"
+      ;;
+    backup)
+      shift
+      require_repo
+      backup_cmd "$@"
+      ;;
+    -h|--help)
+      show_help
+      ;;
+    -v|--version)
+      show_version
+      ;;
+    "")
+      show_help
+      exit 1
+      ;;
+    *)
+      log_error "Unknown command: $1" \
+        "- Run 'dotfiles --help' for available commands"
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

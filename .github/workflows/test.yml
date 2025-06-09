@@ -1,0 +1,117 @@
+name: Test Dotfiles Generator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Disable analytics and telemetry
+  HOMEBREW_NO_ANALYTICS: 1
+  HOMEBREW_NO_AUTO_UPDATE: 1
+
+jobs:
+  test:
+    name: Test on macOS
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up environment
+      run: |
+        # Ensure we have the latest Xcode command line tools
+        xcode-select --install || true
+        
+        # Set up zsh as default shell for consistency
+        export SHELL=/bin/zsh
+        
+    - name: Validate generator script
+      run: |
+        # Check syntax
+        zsh -n make.zsh
+        
+        # Make executable
+        chmod +x make.zsh
+        
+        echo "✓ Generator script validation passed"
+        
+    - name: Run generator
+      run: |
+        # Run generator in clean directory
+        ./make.zsh
+        
+        echo "✓ Generator execution completed"
+        
+    - name: Run test suite
+      run: |
+        # Execute all tests
+        ./tests/run-all.sh
+        
+    - name: Validate generated structure
+      run: |
+        # Verify critical files exist
+        test -f dotfiles || (echo "❌ Main executable missing" && exit 1)
+        test -f install.sh || (echo "❌ Install script missing" && exit 1)
+        test -f README.md || (echo "❌ Documentation missing" && exit 1)
+        test -d _lib || (echo "❌ Library directory missing" && exit 1)
+        test -d tests || (echo "❌ Tests directory missing" && exit 1)
+        
+        # Verify executables
+        test -x dotfiles || (echo "❌ Main executable not executable" && exit 1)
+        test -x install.sh || (echo "❌ Install script not executable" && exit 1)
+        
+        echo "✓ Generated structure validation passed"
+        
+    - name: Test CLI help system
+      run: |
+        # Test basic CLI functionality
+        ./dotfiles --help >/dev/null || (echo "❌ Help command failed" && exit 1)
+        ./dotfiles --version >/dev/null || (echo "❌ Version command failed" && exit 1)
+        
+        echo "✓ CLI help system validation passed"
+        
+    - name: Test error handling
+      run: |
+        # Test that invalid commands fail appropriately
+        if ./dotfiles invalid-command >/dev/null 2>&1; then
+          echo "❌ Should reject invalid commands"
+          exit 1
+        fi
+        
+        echo "✓ Error handling validation passed"
+        
+    - name: Performance check
+      run: |
+        # Ensure tests complete within reasonable time
+        timeout 60s ./tests/run-all.sh || (echo "❌ Tests took too long" && exit 1)
+        
+        echo "✓ Performance check passed"
+        
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "## Test Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f tests/main.test.sh ] && [ -f tests/e2e.test.sh ]; then
+          echo "✅ Test suite generated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Main tests: Available" >> $GITHUB_STEP_SUMMARY  
+          echo "✅ E2E tests: Available" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Test suite generation failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f dotfiles ] && [ -x dotfiles ]; then
+          echo "✅ CLI tool: Generated and executable" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ CLI tool: Generation failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Generated Files:**" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        find . -type f -name "*.sh" -o -name "dotfiles" -o -name "*.md" -o -name "*.yml" | sort >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
