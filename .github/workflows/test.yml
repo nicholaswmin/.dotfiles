@@ -20,11 +20,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Fail if Not Running on ARM (Apple Silicon)
+      - name: Validate Apple Silicon architecture
         run: |
-          arch=$(uname -m)
-          if [ "$arch" != "arm64" ]; then
-            echo "::error::Not running on ARM (Apple Silicon) architecture ($arch)"
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "::error::expected arm64, got: $(uname -m)"
             exit 1
           fi
           echo "✓ ARM architecture detected"
