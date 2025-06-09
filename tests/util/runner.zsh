@@ -43,7 +43,8 @@ test() {
       return 1
     fi
   else
-    if eval "$command"; then
+    if eval "$command" &>/dev/null; then
+      printf "✓    %s\n" "$name"
       ((TESTS_PASSED++))
       return 0
     else

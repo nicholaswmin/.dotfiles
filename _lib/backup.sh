@@ -46,23 +46,20 @@ commit_changes() {
 }
 
 push_changes() {
-  cd "$DOTFILES_ROOT" || return 1
-  
-  local branch="$(git rev-parse --abbrev-ref HEAD)"
+  cd "<span class="math-inline">DOTFILES\_ROOT" \|\| return 1
+local branch\="</span>(git rev-parse --abbrev-ref HEAD)"
   
   git push origin "$branch" || {
     log_error "Failed to push to remote" \
       "- Check network connectivity" \
       "- Verify repository access permissions" \
-      "- Pull remote changes first: git pull origin $branch"
-    return 1
-  }
-  
-  return 0
-}
-
-backup_cmd() {
-  local message="${1:-"Update dotfiles $(date +'%Y-%m-%d %H:%M')"}"
+      "- Pull remote changes first: git pull origin <span class="math-inline">branch"
+return 1
+\}
+return 0
+\}
+backup\_cmd\(\) \{
+local message\="</span>{1:-"Update dotfiles $(date +'%Y-%m-%d %H:%M')"}"
   
   log "Backing up dotfiles..."
   
@@ -78,6 +75,4 @@ backup_cmd() {
   push_changes || exit 1
   
   log_done "Dotfiles backed up successfully" \
-    "- Committed: $message" \
-    "- Pushed to remote repository"
-}
+    "- Committed: $message"
