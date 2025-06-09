@@ -32,7 +32,7 @@ jobs:
         
     - name: Run test suite
       run: |
-        ls -la
+        find . -type d -mindepth 1 -maxdepth 2 -exec ls -ld {} \;
         ./tests/run-all.sh
         
     - name: Validate generated structure
