@@ -1,10 +1,6 @@
 #!/usr/bin/env zsh
 # tests/util/dotfiles.zsh - dotfiles-specific test helpers
 
-# Error handling
-set -e
-
-# Environment setup
 setup_dotfiles_env() {
   export TEST_ROOT="$(temp_dir "dotfiles-test")"
   export FAKE_HOME="$TEST_ROOT/home"
@@ -29,9 +25,17 @@ case "$1" in
   init) mkdir -p .git; exit 0 ;;
   add|commit|remote|pull|push|status) exit 0 ;;
   rev-parse) echo "main"; exit 0 ;;
-  diff) case "$2" in --quiet|--cached) exit 1 ;; *) echo "mock diff"; exit 0 ;; esac ;;
+  diff) 
+    case "$2" in 
+      --quiet|--cached) exit 1 ;;  # Always show "changes" for backup tests
+      *) echo "mock diff"; exit 0 ;; 
+    esac ;;
   clone) mkdir -p "$2"; cd "$2"; mkdir -p .git; exit 0 ;;
-  get-url) exit 1 ;;  # simulate no remote configured
+  get-url) 
+    case "$2" in
+      origin) echo "https://github.com/user/dotfiles.git"; exit 0 ;;
+      *) exit 1 ;;
+    esac ;;
   rm) exit 0 ;;
   *) exit 0 ;;
 esac

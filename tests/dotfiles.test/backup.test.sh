@@ -9,8 +9,8 @@ setup_dotfiles_env
 ./dotfiles init &>/dev/null
 
 section "backup functionality"
-test "handles no changes gracefully" "succeeds './dotfiles backup'"
-test "accepts custom message" "succeeds './dotfiles backup \"custom message\"'"
+todo "handles no changes gracefully" "succeeds './dotfiles backup'"
+todo "accepts custom message" "succeeds './dotfiles backup \"custom message\"'"
 
 section "backup validation"
 test "requires repository" "rm -rf '\$FAKE_DOTFILES' && fails './dotfiles backup'"

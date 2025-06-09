@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# tests/util/runner.zsh - generic test framework with error handling
+# tests/util/runner.zsh - generic test framework
 #
 # Usage: source this file then use test functions
 #
@@ -16,31 +16,11 @@
 #   
 #   summary "my tests"
 
-# =============================================================================
-# Error Handling and Validation
-# =============================================================================
-
-# Exit on errors in test framework
-set -e
-
-# Validate we're in zsh
-[[ -n "$ZSH_VERSION" ]] || {
-  printf "ERROR: Test framework requires zsh\n" >&2
-  exit 1
-}
-
-# =============================================================================
-# Test State
-# =============================================================================
-
+# Test state
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 TESTS_TODO=0
-
-# =============================================================================
-# Core Test Functions
-# =============================================================================
 
 test() {
   local name="$1" command="$2" timeout="${3:-5}"
@@ -54,21 +34,21 @@ test() {
   
   if command -v timeout >/dev/null 2>&1; then
     if timeout "$timeout" zsh -c "$command" &>/dev/null; then
-      printf "✓ %s\n" "$name"
+      printf "✓    %s\n" "$name"
       ((TESTS_PASSED++))
       return 0
     else
-      printf "✗ %s\n" "$name"
+      printf "✗    %s\n" "$name"
       ((TESTS_FAILED++))
       return 1
     fi
   else
     if eval "$command" &>/dev/null; then
-      printf "✓ %s\n" "$name"
+      printf "✓    %s\n" "$name"
       ((TESTS_PASSED++))
       return 0
     else
-      printf "✗ %s\n" "$name"
+      printf "✗    %s\n" "$name"
       ((TESTS_FAILED++))
       return 1
     fi
@@ -87,9 +67,9 @@ todo() {
   ((TESTS_TODO++))
   
   if eval "$command" &>/dev/null; then
-    printf "✓ %s (TODO: unexpected pass)\n" "$name"
+    printf "✓    %s (TODO: unexpected pass)\n" "$name"
   else
-    printf "- %s (TODO)\n" "$name"
+    printf "-    %s (TODO)\n" "$name"
   fi
 }
 
@@ -98,7 +78,7 @@ section() {
     printf "ERROR: section() requires name\n" >&2
     return 1
   }
-  printf "\n** %s **\n" "$1"
+  printf "\n%s\n-----\n" "$1"
 }
 
 summary() {
@@ -133,10 +113,6 @@ reset() {
   TESTS_TODO=0
 }
 
-# =============================================================================
-# Test Helper Functions
-# =============================================================================
-
 file() { [[ -f "$1" ]]; }
 dir() { [[ -d "$1" ]]; }
 executable() { [[ -x "$1" ]]; }
@@ -165,10 +141,6 @@ fails() {
   [[ -n "$1" ]] || return 1
   ! succeeds "$1"
 }
-
-# =============================================================================
-# Environment Utilities
-# =============================================================================
 
 ci_only() {
   local test_name="$1"
@@ -200,33 +172,3 @@ cleanup_temp() {
   local temp_dir="$1"
   [[ -n "$temp_dir" && -d "$temp_dir" ]] && rm -rf "$temp_dir"
 }
-
-# =============================================================================
-# Framework Validation
-# =============================================================================
-
-# Validate framework when sourced
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-  # Being sourced - verify all functions loaded
-  local required_functions=(test todo section summary reset file dir executable symlink contains succeeds fails ci_only)
-  local missing_functions=()
-  
-  for func in "${required_functions[@]}"; do
-    if ! declare -f "$func" >/dev/null 2>&1; then
-      missing_functions+=("$func")
-    fi
-  done
-  
-  if [[ ${#missing_functions[@]} -gt 0 ]]; then
-    printf "ERROR: Test framework incomplete - missing functions: %s\n" "${missing_functions[*]}" >&2
-    return 1
-  fi
-  
-  # Validate test state variables
-  for var in TESTS_RUN TESTS_PASSED TESTS_FAILED TESTS_TODO; do
-    if [[ -z "${(P)var}" && "${(P)var}" != "0" ]]; then
-      printf "ERROR: Test framework incomplete - missing variable: %s\n" "$var" >&2
-      return 1
-    fi
-  done
-fi
