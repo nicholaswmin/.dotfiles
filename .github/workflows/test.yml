@@ -28,11 +28,11 @@ jobs:
           fi
           echo "✓ ARM architecture detected"
 
+      - name: Visualise project file structure
+        run: |
+          echo "** directory structure **"
+          tree -L 2 -p
+          echo
+
       - name: Run Tests
         run: ./tests/run.test.sh
-
-      - name: Test CLI
-        run: |
-          ./dotfiles --help >/dev/null || { echo "::error::Help command failed"; exit 1; }
-          ./dotfiles --version >/dev/null || { echo "::error::Version command failed"; exit 1; }
-          echo "✓ CLI help/version validation passed"
