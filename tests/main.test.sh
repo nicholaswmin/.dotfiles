@@ -40,10 +40,21 @@ test_fail() {
 setup_test_environment() {
   mkdir -p "$TEST_DIR"
   cd "$TEST_DIR"
-  cp "$SCRIPT_DIR/../make.zsh" . || {
-    echo "ERROR: Cannot find generator script"
+  
+  # Copy the generator script (now called make.zsh)
+  if [[ -f "$SCRIPT_DIR/../make.zsh" ]]; then
+    cp "$SCRIPT_DIR/../make.zsh" . || {
+      echo "ERROR: Failed to copy make.zsh"
+      exit 1
+    }
+  else
+    echo "ERROR: Cannot find make.zsh in parent directory"
+    echo "Debug: Looking in: $SCRIPT_DIR/.."
+    echo "Debug: Available files:"
+    ls -la "$SCRIPT_DIR/.." || echo "Directory listing failed"
     exit 1
-  }
+  fi
+  
   chmod +x make.zsh
 }
 

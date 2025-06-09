@@ -31,10 +31,10 @@ jobs:
     - name: Validate generator script
       run: |
         # Check syntax
-        zsh -n ./make.zsh
+        zsh -n make.zsh
         
         # Make executable
-        chmod +x ./make.zsh
+        chmod +x make.zsh
         
         echo "✓ Generator script validation passed"
         

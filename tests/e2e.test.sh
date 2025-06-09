@@ -49,7 +49,12 @@ setup_test_environment() {
   mkdir -p "$FAKE_HOME/.ssh"
   echo "Host *" > "$FAKE_HOME/.ssh/config"
   
-  # Copy generated dotfiles tool
+  # Copy generated dotfiles tool - check if it exists first
+  if [[ ! -d "$SCRIPT_DIR/_lib" ]]; then
+    printf "ERROR: Generated dotfiles not found. Run generator first.\n" >&2
+    exit 1
+  fi
+  
   cp -r "$SCRIPT_DIR"/* "$WORKSPACE/"
   cd "$WORKSPACE"
   
