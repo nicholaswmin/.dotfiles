@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   IS_ENV_CI: true
@@ -15,31 +15,46 @@ jobs:
   test:
     name: Test on macOS
     runs-on: macos-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
 
-    - name: Run test suite
-      run: |
-        ./tests/run-all.sh
-        
-    - name: Validate generated structure
-      run: |
-        test -f dotfiles || (echo "❌ Main executable missing" && exit 1)
-        test -f install.sh || (echo "❌ Install script missing" && exit 1)
-        test -f README.md || (echo "❌ Documentation missing" && exit 1)
-        test -d _lib || (echo "❌ Library directory missing" && exit 1)
-        test -d tests || (echo "❌ Tests directory missing" && exit 1)
-        
-        test -x dotfiles || (echo "❌ Main executable not executable" && exit 1)
-        test -x install.sh || (echo "❌ Install script not executable" && exit 1)
-        
-        echo "✓ Generated structure validation passed"
-        
-    - name: Test CLI help system
-      run: |
-        ./dotfiles --help >/dev/null || (echo "❌ Help command failed" && exit 1)
-        ./dotfiles --version >/dev/null || (echo "❌ Version command failed" && exit 1)
-        
-        echo "✓ CLI help system validation passed"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fail if Not Running on ARM (Apple Silicon)
+        run: |
+          arch=$(uname -m)
+          if [ "$arch" != "arm64" ]; then
+            echo "::error::Not running on ARM (Apple Silicon) architecture ($arch)"
+            exit 1
+          fi
+          echo "✓ ARM architecture detected"
+
+      - name: Run All Shell Tests
+        run: ./tests/run-all.sh
+
+      - name: Check Required Files Exist
+        run: |
+          for f in dotfiles install.sh README.md; do
+            [ -f "$f" ] || { echo "::error::$f missing"; exit 1; }
+          done
+          echo "✓ All required files exist"
+
+      - name: Check Required Directories Exist
+        run: |
+          for d in _lib tests; do
+            [ -d "$d" ] || { echo "::error::$d directory missing"; exit 1; }
+          done
+          echo "✓ All required directories exist"
+
+      - name: Check Executable Permissions
+        run: |
+          for x in dotfiles install.sh; do
+            [ -x "$x" ] || { echo "::error::$x not executable"; exit 1; }
+          done
+          echo "✓ All executables have correct permissions"
+
+      - name: Test CLI Help and Version Output
+        run: |
+          ./dotfiles --help >/dev/null || { echo "::error::Help command failed"; exit 1; }
+          ./dotfiles --version >/dev/null || { echo "::error::Version command failed"; exit 1; }
+          echo "✓ CLI help/version validation passed"
