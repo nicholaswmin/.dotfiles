@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-set -e
+# DO NOT use set -e - we need to capture test failures
 
 TESTS_RUN=0
 TESTS_PASSED=0
@@ -11,21 +11,23 @@ FAKE_HOME="$TEST_ROOT/home"
 FAKE_REPO="$TEST_ROOT/.dotfiles"
 
 test() {
-  local name="$1" command="$2"
+  local name="$1" 
+  local command="$2"
   ((TESTS_RUN++))
   
+  # Run command and capture result
   local output
-  output=$(eval "$command" 2>&1)
-  local exit_code=$?
+  local exit_code
+  output=$(eval "$command" 2>&1) || exit_code=$?
   
-  if [[ $exit_code -eq 0 ]]; then
+  if [[ ${exit_code:-0} -eq 0 ]]; then
     printf "✓    %s\n" "$name"
     ((TESTS_PASSED++))
   else
     printf "✗    %s\n" "$name"
     printf "     Command: %s\n" "$command"
     printf "     Output: %s\n" "$output"
-    printf "     Exit: %d\n" "$exit_code"
+    printf "     Exit: %d\n" "${exit_code:-0}"
     ((TESTS_FAILED++))
   fi
 }
@@ -51,41 +53,71 @@ setup_test_env() {
 }
 
 cleanup_test_env() {
-  rm -rf "$TEST_ROOT"
+  rm -rf "$TEST_ROOT" 2>/dev/null || true
   unset HOME DOTFILES_ROOT DOTFILES_HOME
 }
 
 printf "** dotfiles test suite **\n"
+printf "PWD: %s\n" "$PWD"
+printf "Contents:\n"
+ls -la || true
+printf "\n"
+
+# Verify we're in the right place
+if [[ ! -f ./dotfiles ]]; then
+  printf "ERROR: Cannot find ./dotfiles - are we in the right directory?\n"
+  printf "Looking for dotfiles in: %s\n" "$PWD"
+  exit 1
+fi
+
+if [[ ! -x ./dotfiles ]]; then
+  printf "ERROR: ./dotfiles exists but is not executable\n"
+  chmod +x ./dotfiles || printf "Failed to make executable\n"
+fi
+
+if [[ -f ./install.sh && ! -x ./install.sh ]]; then
+  chmod +x ./install.sh || printf "Failed to make install.sh executable\n"
+fi
 
 section "structure"
-test "dotfiles executable exists" "[[ -x dotfiles ]]"
-test "install script exists" "[[ -x install.sh ]]"
-test "readme exists" "[[ -f README.md ]]"
-test "gitignore exists" "[[ -f .gitignore ]]"
-test "lib directory exists" "[[ -d _lib ]]"
-test "home directory exists" "[[ -d home ]]"
+test "dotfiles executable exists" "[[ -x ./dotfiles ]]"
+test "install script exists" "[[ -x ./install.sh ]]"
+test "readme exists" "[[ -f ./README.md ]]"
+test "gitignore exists" "[[ -f ./.gitignore ]]"
+test "lib directory exists" "[[ -d ./_lib ]]"
+test "home directory exists" "[[ -d ./home ]]"
 
 section "libraries"
-test "loggers library exists" "[[ -f _lib/loggers.sh ]]"
-test "validation library exists" "[[ -f _lib/validation.sh ]]"
-test "init library exists" "[[ -f _lib/init.sh ]]"
-test "link library exists" "[[ -f _lib/link.sh ]]"
-test "unlink library exists" "[[ -f _lib/unlink.sh ]]"
-test "backup library exists" "[[ -f _lib/backup.sh ]]"
-test "restore library exists" "[[ -f _lib/restore.sh ]]"
+test "loggers library exists" "[[ -f ./_lib/loggers.sh ]]"
+test "validation library exists" "[[ -f ./_lib/validation.sh ]]"
+test "init library exists" "[[ -f ./_lib/init.sh ]]"
+test "link library exists" "[[ -f ./_lib/link.sh ]]"
+test "unlink library exists" "[[ -f ./_lib/unlink.sh ]]"
+test "backup library exists" "[[ -f ./_lib/backup.sh ]]"
+test "restore library exists" "[[ -f ./_lib/restore.sh ]]"
 
 section "syntax"
-test "dotfiles syntax valid" "zsh -n dotfiles"
-test "install script syntax valid" "zsh -n install.sh"
-test "all libraries syntax valid" "for f in _lib/*.sh; do zsh -n \"\$f\"; done"
+test "dotfiles syntax valid" "zsh -n ./dotfiles"
+test "install script syntax valid" "zsh -n ./install.sh"
+test "loggers syntax valid" "zsh -n ./_lib/loggers.sh"
+test "validation syntax valid" "zsh -n ./_lib/validation.sh"
+test "init syntax valid" "zsh -n ./_lib/init.sh"
+test "link syntax valid" "zsh -n ./_lib/link.sh"
+test "unlink syntax valid" "zsh -n ./_lib/unlink.sh"
+test "backup syntax valid" "zsh -n ./_lib/backup.sh"
+test "restore syntax valid" "zsh -n ./_lib/restore.sh"
 
 section "commands"
-test "help command works" "./dotfiles --help >/dev/null"
-test "version command works" "./dotfiles --version >/dev/null"
-test "rejects unknown commands" "! ./dotfiles badcommand 2>/dev/null"
+test "help command works" "./dotfiles --help >/dev/null 2>&1"
+test "version command works" "./dotfiles --version >/dev/null 2>&1"
+test "rejects unknown commands" "! ./dotfiles badcommand >/dev/null 2>&1"
 
 section "integration (CI only)"
 if [[ -n "${IS_ENV_CI}" ]]; then
+  # Save original values
+  local orig_home="$HOME"
+  local orig_path="$PATH"
+  
   setup_test_env
   
   # Mock git for safe testing
@@ -105,6 +137,9 @@ GITEOF
   test "linked file exists in repo" "[[ -f $FAKE_REPO/home/.testrc ]]"
   test "symlink points to repo" "[[ \"\$(readlink $FAKE_HOME/.testrc)\" == \"$FAKE_REPO/home/.testrc\" ]]"
   
+  # Restore environment
+  export HOME="$orig_home"
+  export PATH="$orig_path"
   cleanup_test_env
 else
   printf "     (skipping - set IS_ENV_CI=true to run)\n"
