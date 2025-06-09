@@ -1,20 +1,5 @@
 #!/usr/bin/env zsh
 # tests/util/runner.zsh - generic test framework
-#
-# Usage: source this file then use test functions
-#
-# Basic test structure:
-#   source "$(dirname "$0")/util/runner.zsh"
-#   
-#   section "file validation"
-#   test "config file exists" "file ~/.config/app.conf"
-#   test "binary is executable" "executable /usr/bin/app"
-#   
-#   section "command behavior"
-#   test "help command works" "succeeds 'app --help'"
-#   test "invalid flag fails" "fails 'app --badarg'"
-#   
-#   summary "my tests"
 
 # Test state
 TESTS_RUN=0
@@ -22,36 +7,43 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 TESTS_TODO=0
 
+# FIX: Replaced original test function with a version that has a built-in, dependency-free timeout.
 test() {
-  local name="$1" command="$2" timeout="${3:-5}"
-  
+  local name="$1" command="$2" timeout_duration="${3:-5}"
+  local pid
+  local exit_code=0
+
   [[ -n "$name" && -n "$command" ]] || {
     printf "ERROR: test() requires name and command\n" >&2
     return 1
   }
-  
+
   ((TESTS_RUN++))
-  
-  if command -v timeout >/dev/null 2>&1; then
-    if timeout "$timeout" zsh -c "$command" &>/dev/null; then
-      printf "✓    %s\n" "$name"
-      ((TESTS_PASSED++))
-      return 0
-    else
-      printf "✗    %s\n" "$name"
-      ((TESTS_FAILED++))
-      return 1
+
+  eval "$command" &>/dev/null &
+  pid=$!
+
+  (
+    sleep "$timeout_duration"
+    if ps -p $pid > /dev/null; then
+      kill -9 $pid 2>/dev/null
     fi
+  ) &
+  local watcher_pid=$!
+
+  wait $pid 2>/dev/null
+  exit_code=$?
+
+  kill -9 $watcher_pid 2>/dev/null &>/dev/null
+
+  if [[ $exit_code -eq 0 ]]; then
+    printf "✓    %s\n" "$name"
+    ((TESTS_PASSED++))
+    return 0
   else
-    if eval "$command" &>/dev/null; then
-      printf "✓    %s\n" "$name"
-      ((TESTS_PASSED++))
-      return 0
-    else
-      printf "✗    %s\n" "$name"
-      ((TESTS_FAILED++))
-      return 1
-    fi
+    printf "✗    %s\n" "$name"
+    ((TESTS_FAILED++))
+    return 1
   fi
 }
 
@@ -66,7 +58,6 @@ todo() {
   ((TESTS_RUN++))
   ((TESTS_TODO++))
   
-  # Don't execute command for TODO items - just mark as todo
   printf "-    %s (TODO)\n" "$name"
 }
 
@@ -124,14 +115,26 @@ contains() {
   [[ "$output" == *"$expected_text"* ]]
 }
 
-succeeds() { 
+# FIX: Replaced original succeeds function with a version that has a built-in, dependency-free timeout.
+succeeds() {
   local command="$1"
+  local pid
+  local exit_code=0
+
   [[ -n "$command" ]] || return 1
-  if command -v timeout >/dev/null 2>&1; then
-    timeout 5 eval "$command" &>/dev/null
-  else
-    eval "$command" &>/dev/null
-  fi
+
+  eval "$command" &>/dev/null &
+  pid=$!
+
+  ( sleep 5; if ps -p $pid > /dev/null; then kill -9 $pid 2>/dev/null; fi ) &
+  local watcher_pid=$!
+
+  wait $pid 2>/dev/null
+  exit_code=$?
+
+  kill -9 $watcher_pid 2>/dev/null &>/dev/null
+  
+  return $exit_code
 }
 
 fails() { 
