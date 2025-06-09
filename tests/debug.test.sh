@@ -1,24 +1,19 @@
-#!/usr/bin/env zsh
-set -e
+test() {
+  local name="$1" command="$2"
+  
+  # Add a debug message to see what's being run
+  echo "DEBUG: Evaluating command -> [ $command ]"
 
-# Enable command tracing
-set -x
+  ((TESTS_RUN++))
 
-source "$(dirname "$0")/util/runner.zsh"
-source "$(dirname "$0")/util/dotfiles.zsh"
-
-ci_only "Debug hanging test" || exit 0
-setup_dotfiles_env
-
-# Verify the environment before running the test
-echo "---- DEBUGGING INFO ----"
-echo "Current PATH: $PATH"
-echo "which git: $(which git)"
-echo "------------------------"
-
-# This is the test known to hang from your other files
-# It runs the 'backup' command without having run 'init' first
-test "requires repo for backup" "fails './dotfiles backup'"
-
-cleanup_dotfiles_env
-summary "debug test"
+  # Run the command directly and check its exit status
+  if eval "$command"; then
+      printf "✓    %s\n" "$name"
+      ((TESTS_PASSED++))
+      return 0
+  else
+      printf "✗    %s\n" "$name"
+      ((TESTS_FAILED++))
+      return 1
+  fi
+}
