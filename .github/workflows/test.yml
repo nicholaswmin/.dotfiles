@@ -32,6 +32,7 @@ jobs:
         
     - name: Run test suite
       run: |
+        ls -la
         ./tests/run-all.sh
         
     - name: Validate generated structure
