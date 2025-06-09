@@ -29,7 +29,7 @@ jobs:
         run: brew install -q tree >/dev/null 2>&1 || true
 
       - name: Run Debug Test
-        run: ./tests/debug.test.sh
+        run: zsh ./tests/debug.test.sh
 
       - name: Run Tests
         run: ./tests/run.test.sh
